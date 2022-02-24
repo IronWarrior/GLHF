@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace GGEZ
+namespace GLHF
 {
     public unsafe class StateObject : TickBehaviour
     {

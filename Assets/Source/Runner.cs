@@ -1,10 +1,10 @@
-using GGEZ.Transport;
+using GLHF.Transport;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GGEZ
+namespace GLHF
 {
     /// <summary>
     /// Manages connections between players, the tick based simulation,

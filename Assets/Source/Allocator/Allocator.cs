@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace GGEZ
+namespace GLHF
 {
     public unsafe class Allocator
     {

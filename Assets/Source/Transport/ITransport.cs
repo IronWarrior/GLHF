@@ -1,6 +1,6 @@
 using System;
 
-namespace GGEZ.Transport
+namespace GLHF.Transport
 {
     /// <summary>
     /// Allows listening or connecting to peers, and sending them

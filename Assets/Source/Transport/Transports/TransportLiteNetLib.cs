@@ -1,7 +1,7 @@
 using LiteNetLib;
 using System;
 
-namespace GGEZ.Transport
+namespace GLHF.Transport
 {
     public class TransportLiteNetLib : ITransport
     {

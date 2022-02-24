@@ -1,6 +1,6 @@
-using GGEZ.Transport;
+using GLHF.Transport;
 
-namespace GGEZ
+namespace GLHF
 {
     /// <summary>
     /// Messages sent from the client to the server.

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace GGEZ
+namespace GLHF
 {
     public partial struct StateInput
     {

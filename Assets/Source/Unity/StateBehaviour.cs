@@ -1,4 +1,4 @@
-namespace GGEZ
+namespace GLHF
 {
     public unsafe abstract class StateBehaviour : TickBehaviour
     {

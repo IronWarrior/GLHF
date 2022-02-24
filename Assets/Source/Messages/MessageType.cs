@@ -1,4 +1,4 @@
-namespace GGEZ.Transport
+namespace GLHF.Transport
 {
     enum MessageType
     {

@@ -4,7 +4,7 @@ using UnityEditor;
 #endif
 using UnityEngine;
 
-namespace GGEZ
+namespace GLHF
 {
     [CreateAssetMenu(menuName = "Galaxy/Create Config Asset")]
     public class Config : ScriptableObject

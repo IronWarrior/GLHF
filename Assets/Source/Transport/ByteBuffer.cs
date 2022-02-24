@@ -1,4 +1,4 @@
-namespace GGEZ.Transport
+namespace GLHF.Transport
 {
     public unsafe class ByteBuffer
     {

@@ -1,11 +1,11 @@
-using GGEZ.Transport;
+using GLHF.Transport;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System;
 
-namespace GGEZ
+namespace GLHF
 {
     public class Bootstrap : MonoBehaviour
     {

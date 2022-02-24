@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace GGEZ.Transport
+namespace GLHF.Transport
 {   
     /// <summary>
     /// Dummy transport to spoof connections within a single instance of the app.

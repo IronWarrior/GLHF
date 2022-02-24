@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEditor;
 using System.Linq;
 
-namespace GGEZ.Editor
+namespace GLHF.Editor
 {
     public class RunnersWindow : EditorWindow
     {      
