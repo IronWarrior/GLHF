@@ -1,0 +1,3 @@
+[submodule "Assets/Smmalloc-CSharp"]
+	path = Assets/Smmalloc-CSharp
+	url = https://github.com/nxrighthere/Smmalloc-CSharp.git
