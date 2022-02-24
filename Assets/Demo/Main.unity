@@ -140,7 +140,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &42717601
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,11 +219,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 041163e14507885418a5f79115eab73c, type: 2}
-  clients: 1
+  clients: 2
   port: 7777
   useLocalTransport: 1
-  useSimulatedLatency: 0
-  minLatencyMilliseconds: 500
+  useSimulatedLatency: 1
+  minLatencyMilliseconds: 100
   maxLatencyMilliseconds: 500
 --- !u!4 &230635089
 Transform:
@@ -783,7 +783,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1381529418
 MonoBehaviour:
   m_ObjectHideFlags: 0
