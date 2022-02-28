@@ -2,8 +2,14 @@ using System.Collections.Generic;
 
 namespace GLHF
 {
+    // TODO: Should abstract ServerInputMessage to just be a message about a specific tick.
+    /// <summary>
+    /// Messages inserted into the buffer are sorted by tick.
+    /// </summary>
     public class MessageBuffer
     {
+        public int CurrentSize => messages.Count;
+
         private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
 
         public void Insert(ServerInputMessage message)

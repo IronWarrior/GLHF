@@ -424,5 +424,14 @@ namespace GLHF
                 node = node.Next;
             }
         }
+
+        #region Debug
+        public int MessageBufferSize()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return pendingInputsClientSide.CurrentSize;
+        }
+        #endregion
     }
 }
