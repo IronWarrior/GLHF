@@ -47,7 +47,7 @@ namespace GLHF
 
         private List<StateInput> currentInputs = new List<StateInput>();
 
-        private Queue<ServerInputMessage> pendingInputsClientSide;
+        private MessageBuffer pendingInputsClientSide;
 
         private ITransport transport;
         private Config config;
@@ -98,7 +98,7 @@ namespace GLHF
             transport.OnPeerConnected += Transport_OnPeerConnected;
             transport.Connect("localhost", port);
 
-            pendingInputsClientSide = new Queue<ServerInputMessage>();
+            pendingInputsClientSide = new MessageBuffer();
 
             this.transport = transport;
         }
@@ -298,7 +298,7 @@ namespace GLHF
                 else if (msgType == MessageType.Input)
                 {
                     ServerInputMessage message = new ServerInputMessage(buffer);
-                    pendingInputsClientSide.Enqueue(message);
+                    pendingInputsClientSide.Insert(message);
                 }
             }
         }
@@ -333,16 +333,14 @@ namespace GLHF
                         ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum);
                         serverInputMessage.Write(byteBuffer);
 
-                        transport.SendToAll(byteBuffer.Data, DeliveryMethod.ReliableOrdered);
+                        transport.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
 
                         Tick++;
                     }
                     else
                     {
-                        while (pendingInputsClientSide.Count > 0)
+                        while (pendingInputsClientSide.TryPop(Tick, out ServerInputMessage networkInput))
                         {
-                            var networkInput = pendingInputsClientSide.Dequeue();
-
                             Debug.Assert(networkInput.Tick == Tick, $"Attempting to use inputs from server tick {networkInput.Tick} while client is on tick {Tick}.");
 
                             currentInputs = networkInput.Inputs;
