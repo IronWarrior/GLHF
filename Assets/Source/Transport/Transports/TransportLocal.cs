@@ -13,9 +13,6 @@ namespace GLHF.Transport
         public event Action<int, float, byte[]> OnReceive;
 
         private int ID;
-        private int sendSequenceNumber;
-
-        private int lastReceivedSequenceNumber = -1;
 
         private struct Packet
         {
@@ -23,9 +20,18 @@ namespace GLHF.Transport
             public int SequenceNumber;
             public byte[] Data;
             public float SendTime;
+            public DeliveryMethod DeliveryMethod;
         }
 
-        private readonly List<Packet> pendingReceivedPackets = new List<Packet>();
+        private class Channel
+        {
+            public readonly List<Packet> PendingReceived = new List<Packet>();
+            public int LastReceivedSequenceNumber = -1;
+            public int SendSequenceNumber;
+        }
+
+        private readonly Channel reliableChannel = new Channel();
+        private readonly Channel reliableOrderedChannel = new Channel();
         private readonly List<TransportLocal> peers = new List<TransportLocal>();
 
         private static TransportLocal listeningTransport;
@@ -59,24 +65,8 @@ namespace GLHF.Transport
 
         public void Update()
         {
-            while (pendingReceivedPackets.Count > 0)
-            {
-                Packet packet = pendingReceivedPackets[pendingReceivedPackets.Count - 1];
-
-                if (packet.SequenceNumber == lastReceivedSequenceNumber + 1)
-                {
-                    pendingReceivedPackets.RemoveAt(pendingReceivedPackets.Count - 1);
-                    lastReceivedSequenceNumber++;
-
-                    float rtt = (Time.unscaledTime - packet.SendTime) * 2;
-
-                    OnReceive?.Invoke(packet.SendingPeerID, rtt, packet.Data);
-                }
-                else
-                {
-                    break;
-                }
-            }
+            ProcessChannel(reliableOrderedChannel, true);
+            ProcessChannel(reliableChannel, false);
 
             // Send packets with simulated latency.
             for (int i = 0; i < pendingSendPackets.Count; i++)
@@ -98,18 +88,56 @@ namespace GLHF.Transport
                 listeningTransport = null;
         }
 
-        // TODO: Should be public, need to abstract TransportLocal.
-        private void Send(TransportLocal peer, byte[] data)
+        public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
         {
+            this.simulatedLatency = simulatedLatency;
+        }
+
+        public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
+        {
+            foreach (var peer in peers)
+            {
+                Send(peer, data, deliveryMethod);
+            }
+        }
+
+        private void ProcessChannel(Channel channel, bool ordered)
+        {
+            while (channel.PendingReceived.Count > 0)
+            {
+                Packet packet = channel.PendingReceived[channel.PendingReceived.Count - 1];
+
+                if (!ordered || packet.SequenceNumber == channel.LastReceivedSequenceNumber + 1)
+                {
+                    channel.PendingReceived.RemoveAt(channel.PendingReceived.Count - 1);
+                    channel.LastReceivedSequenceNumber++;
+
+                    float rtt = (Time.unscaledTime - packet.SendTime) * 2;
+
+                    OnReceive?.Invoke(packet.SendingPeerID, rtt, packet.Data);
+                }
+                else
+                {
+                    break;
+                }
+            }
+        }
+
+        // TODO: Should be public, need to abstract TransportLocal.
+        private void Send(TransportLocal peer, byte[] data, DeliveryMethod deliveryMethod)
+        {
+            Channel channel = deliveryMethod == DeliveryMethod.ReliableOrdered ? reliableOrderedChannel : reliableChannel;
+
             Packet packet = new Packet()
             {
                 SendingPeerID = peer.ID,
                 Data = data,
-                SequenceNumber = sendSequenceNumber,
-                SendTime = Time.unscaledTime
+                SequenceNumber = channel.SendSequenceNumber,
+                SendTime = Time.unscaledTime,
+                DeliveryMethod = deliveryMethod
             };
-
-            sendSequenceNumber++;
+            
+            channel.SendSequenceNumber++;
 
             if (simulatedLatency.Equals(default(SimulatedLatency)))
                 peer.ReceiveInternal(packet);
@@ -126,19 +154,6 @@ namespace GLHF.Transport
 
                 pendingSendPackets.Add(latencyPacket);
             }
-        }
-
-        public void SendToAll(byte[] data)
-        {
-            foreach (var peer in peers)
-            {
-                Send(peer, data);
-            }
-        }
-
-        public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
-        {
-            this.simulatedLatency = simulatedLatency;
         }
 
         private void ConnectionRequest(TransportLocal client)
@@ -159,8 +174,15 @@ namespace GLHF.Transport
 
         private void ReceiveInternal(Packet packet)
         {
-            pendingReceivedPackets.Insert(0, packet);
-            pendingReceivedPackets.Sort(ComparePackets);
+            if (packet.DeliveryMethod == DeliveryMethod.ReliableOrdered)
+            {
+                reliableOrderedChannel.PendingReceived.Insert(0, packet);
+                reliableOrderedChannel.PendingReceived.Sort(ComparePackets);
+            }
+            else
+            {
+                reliableChannel.PendingReceived.Insert(0, packet);
+            }
         }
 
         private int ComparePackets(Packet a, Packet b)

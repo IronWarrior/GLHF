@@ -114,7 +114,7 @@ namespace GLHF
             buffer.Put(0);
             buffer.Put(PlayerCount);
 
-            transport.SendToAll(buffer.Data);
+            transport.SendToAll(buffer.Data, DeliveryMethod.ReliableOrdered);
 
             LoadSceneAndStartGame(0);
         }
@@ -333,7 +333,7 @@ namespace GLHF
                         ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum);
                         serverInputMessage.Write(byteBuffer);
 
-                        transport.SendToAll(byteBuffer.Data);
+                        transport.SendToAll(byteBuffer.Data, DeliveryMethod.ReliableOrdered);
 
                         Tick++;
                     }
@@ -362,7 +362,7 @@ namespace GLHF
                             ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput);
                             clientInputMessage.Write(byteBuffer);
 
-                            transport.SendToAll(byteBuffer.Data);
+                            transport.SendToAll(byteBuffer.Data, DeliveryMethod.ReliableOrdered);
                         }
                     }
                 }

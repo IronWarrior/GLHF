@@ -223,7 +223,7 @@ MonoBehaviour:
   port: 7777
   useLocalTransport: 1
   useSimulatedLatency: 1
-  minLatencyMilliseconds: 100
+  minLatencyMilliseconds: 500
   maxLatencyMilliseconds: 500
 --- !u!4 &230635089
 Transform:

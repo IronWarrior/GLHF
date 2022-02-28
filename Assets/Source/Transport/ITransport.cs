@@ -19,12 +19,18 @@ namespace GLHF.Transport
         void Update();
 
         // TODO: Same as above, replace with ByteBuffer.
-        void SendToAll(byte[] data);
+        void SendToAll(byte[] data, DeliveryMethod deliveryMethod);
         void SetSimulatedLatency(SimulatedLatency simulatedLatency);
     }
 
     public struct SimulatedLatency
     {
         public int MinDelay, MaxDelay;
+    }
+
+    public enum DeliveryMethod
+    {
+        Reliable = 0,
+        ReliableOrdered = 1
     }
 }

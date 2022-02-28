@@ -44,14 +44,9 @@ namespace GLHF.Transport
             netManager.Stop();
         }
 
-        public void Send(int peer, byte[] data)
+        public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
         {
-            netManager.ConnectedPeerList[peer].Send(data, DeliveryMethod.ReliableOrdered);
-        }
-
-        public void SendToAll(byte[] data)
-        {
-            netManager.SendToAll(data, DeliveryMethod.ReliableOrdered);
+            netManager.SendToAll(data, GetDeliveryMethod(deliveryMethod));
         }
 
         public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
@@ -73,11 +68,24 @@ namespace GLHF.Transport
         {
         }
 
-        private void NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, DeliveryMethod deliveryMethod)
+        private void NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, LiteNetLib.DeliveryMethod deliveryMethod)
         { 
             byte[] bytes = reader.GetRemainingBytes();
 
             OnReceive?.Invoke(peer.Id, peer.Ping, bytes);
+        }
+
+        private LiteNetLib.DeliveryMethod GetDeliveryMethod(DeliveryMethod method)
+        {
+            switch (method)
+            {
+                case DeliveryMethod.Reliable:
+                    return LiteNetLib.DeliveryMethod.ReliableUnordered;
+                case DeliveryMethod.ReliableOrdered:
+                    return LiteNetLib.DeliveryMethod.ReliableOrdered;
+                default:
+                    return LiteNetLib.DeliveryMethod.ReliableUnordered;
+            }
         }
     }
 }
