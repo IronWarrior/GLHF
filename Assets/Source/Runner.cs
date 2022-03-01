@@ -303,8 +303,6 @@ namespace GLHF
             }
         }
 
-        public float deltaMul = 1;
-
         private void Update()
         {
             // Check for incoming messages, firing any applicable events.
