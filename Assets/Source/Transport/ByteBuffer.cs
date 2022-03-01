@@ -21,7 +21,7 @@ namespace GLHF.Transport
 
         public ByteBuffer(byte[] data)
         {
-            this.Data = data;
+            Data = data;
         }
 
         public void Put<T>(T value) where T : unmanaged
