@@ -73,7 +73,7 @@ namespace GLHF.Transport
             {
                 LatencyPacket packet = pendingSendPackets[i];
 
-                if (Time.unscaledTime > packet.Latency + packet.Packet.SendTime)
+                if (Time.time > packet.Latency + packet.Packet.SendTime)
                 {
                     packet.TargetPeer.ReceiveInternal(packet.Packet);
                     pendingSendPackets.RemoveAt(i);
@@ -112,7 +112,7 @@ namespace GLHF.Transport
                     channel.PendingReceived.RemoveAt(channel.PendingReceived.Count - 1);
                     channel.LastReceivedSequenceNumber++;
 
-                    float rtt = (Time.unscaledTime - packet.SendTime) * 2;
+                    float rtt = (Time.time - packet.SendTime) * 2;
 
                     OnReceive?.Invoke(packet.SendingPeerID, rtt, packet.Data);
                 }
@@ -133,7 +133,7 @@ namespace GLHF.Transport
                 SendingPeerID = peer.ID,
                 Data = data,
                 SequenceNumber = channel.SendSequenceNumber,
-                SendTime = Time.unscaledTime,
+                SendTime = Time.time,
                 DeliveryMethod = deliveryMethod
             };
             

@@ -10,7 +10,7 @@ namespace GLHF
     public class Config : ScriptableObject
     {
         public int TickRate = 60;
-        public int JitterBufferSize = 1;
+        public JitterTimescale JitterTimescale;
 
         public StateObject[] Prefabs;
 

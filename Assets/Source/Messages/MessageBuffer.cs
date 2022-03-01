@@ -9,13 +9,17 @@ namespace GLHF
     public class MessageBuffer
     {
         public int CurrentSize => messages.Count;
+        public float RttStandardDeviation => standardDeviation.CalculateStandardDeviation();
 
         private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
+        private readonly RollingStandardDeviation standardDeviation = new RollingStandardDeviation();
 
-        public void Insert(ServerInputMessage message)
+        public void Insert(ServerInputMessage message, float rtt)
         {
             messages.Insert(0, message);
-            messages.Sort(CompareMessages);
+            messages.Sort(CompareMessages);            
+
+            standardDeviation.Insert(rtt);
         }
 
         public bool TryPop(int tick, out ServerInputMessage message)

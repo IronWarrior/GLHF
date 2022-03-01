@@ -36,7 +36,9 @@ namespace GLHF.Editor
             {
                 if (runner.Role == Runner.RunnerRole.Client)
                 {
-                    GUILayout.Label($"Message buffer size: {runner.MessageBufferSize()}");
+                    GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
+                    GUILayout.Label($"Stable Buffer Size: {runner.TargetMessageBufferSize()}");
+                    GUILayout.Label($"Rtt Standard Dev: {(runner.PingStandardDeviation() * 1000):F2}");                    
                 }
             }
         }

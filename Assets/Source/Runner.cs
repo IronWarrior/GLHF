@@ -53,7 +53,7 @@ namespace GLHF
         private Config config;
 
         #region Connection Methods
-        public void Host(int port, Config config, ITransport transport=null)
+        public void Host(int port, Config config, ITransport transport = null)
         {
             this.config = config;
 
@@ -64,8 +64,8 @@ namespace GLHF
             name = "Host";
 
             if (transport == null)
-                transport = new TransportLocal();   
-            
+                transport = new TransportLocal();
+
             transport.OnReceive += Transport_OnReceive;
             transport.OnPeerConnected += Transport_OnPeerConnected;
             transport.Listen(port);
@@ -78,7 +78,7 @@ namespace GLHF
             Connected = true;
         }
 
-        public void Join(int port, Config config, Runner runner, ITransport transport =null)
+        public void Join(int port, Config config, Runner runner, ITransport transport = null)
         {
             this.config = config;
 
@@ -274,7 +274,7 @@ namespace GLHF
                 Connected = true;
         }
 
-        private void Transport_OnReceive(int id, float ping, byte[] data)
+        private void Transport_OnReceive(int id, float rtt, byte[] data)
         {
             ByteBuffer buffer = new ByteBuffer(data);
             MessageType msgType = (MessageType)buffer.Get<byte>();
@@ -298,10 +298,12 @@ namespace GLHF
                 else if (msgType == MessageType.Input)
                 {
                     ServerInputMessage message = new ServerInputMessage(buffer);
-                    pendingInputsClientSide.Insert(message);
+                    pendingInputsClientSide.Insert(message, rtt);
                 }
             }
         }
+
+        public float deltaMul = 1;
 
         private void Update()
         {
@@ -311,18 +313,18 @@ namespace GLHF
             if (Running)
             {
                 StateInput polledInput = default;
-                
+
                 if (PollInput && OnPollInput != null)
                     polledInput = OnPollInput();
 
-                deltaTimeAccumulated += UnityEngine.Time.deltaTime;
-
-                while (deltaTimeAccumulated > DeltaTime)
+                if (Role == RunnerRole.Host)
                 {
-                    deltaTimeAccumulated -= DeltaTime;
+                    deltaTimeAccumulated += UnityEngine.Time.deltaTime;
 
-                    if (Role == RunnerRole.Host)
+                    while (deltaTimeAccumulated > DeltaTime)
                     {
+                        deltaTimeAccumulated -= DeltaTime;
+
                         currentInputs[0] = polledInput;
 
                         TickUpdate();
@@ -337,22 +339,26 @@ namespace GLHF
 
                         Tick++;
                     }
-                    else
+                }
+                else
+                {
+                    deltaTimeAccumulated += UnityEngine.Time.deltaTime * config.JitterTimescale.CalculateTimescale(DeltaTime, pendingInputsClientSide.CurrentSize, pendingInputsClientSide.RttStandardDeviation);
+
+                    while (deltaTimeAccumulated > DeltaTime && pendingInputsClientSide.TryPop(Tick, out ServerInputMessage networkInput))
                     {
-                        while (pendingInputsClientSide.TryPop(Tick, out ServerInputMessage networkInput))
-                        {
-                            Debug.Assert(networkInput.Tick == Tick, $"Attempting to use inputs from server tick {networkInput.Tick} while client is on tick {Tick}.");
+                        deltaTimeAccumulated -= DeltaTime;
 
-                            currentInputs = networkInput.Inputs;
+                        Debug.Assert(networkInput.Tick == Tick, $"Attempting to use inputs from server tick {networkInput.Tick} while client is on tick {Tick}.");
 
-                            TickUpdate();
+                        currentInputs = networkInput.Inputs;
 
-                            long checksum = snapshot.Allocator.Checksum();
+                        TickUpdate();
 
-                            Debug.Assert(checksum == networkInput.Checksum, "Checksums not equal.");
+                        long checksum = snapshot.Allocator.Checksum();
 
-                            Tick++;
-                        }
+                        Debug.Assert(checksum == networkInput.Checksum, "Checksums not equal.");
+
+                        Tick++;
 
                         if (PollInput)
                         {
@@ -426,11 +432,25 @@ namespace GLHF
         }
 
         #region Debug
-        public int MessageBufferSize()
+        public int MessageBufferCount()
         {
             Debug.Assert(Role == RunnerRole.Client);
 
             return pendingInputsClientSide.CurrentSize;
+        }
+
+        public float PingStandardDeviation()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return pendingInputsClientSide.RttStandardDeviation;
+        }
+
+        public int TargetMessageBufferSize()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return config.JitterTimescale.TargetBufferSize(DeltaTime, pendingInputsClientSide.RttStandardDeviation);
         }
         #endregion
     }
