@@ -25,10 +25,7 @@ namespace GLHF
             size = blocks * sizeof(long);
             ptr = Marshal.AllocHGlobal(size);
 
-            for (int i = 0; i < blocks; i++)
-            {
-                *((long*)ptr.ToPointer() + i) = 0;
-            }
+            WriteToZeroes();
         }
 
         /// <summary>
@@ -45,14 +42,7 @@ namespace GLHF
 
         public Allocator(int blocks, byte[] data) : this(blocks)
         {
-            if (size < data.Length)
-                throw new Exception("Allocator created with insufficient blocks to copy byte[] data.");
-
-            for (int i = 0; i < data.Length; i++)
-            {
-                byte* b = (Head + i);
-                *b = data[i];
-            }
+            CopyFrom(data);
         }
 
         ~Allocator()
@@ -105,6 +95,14 @@ namespace GLHF
             }
 
             return size;
+        }
+
+        private void WriteToZeroes()
+        {
+            for (int i = 0; i < size / sizeof(long); i++)
+            {
+                *((long*)ptr.ToPointer() + i) = 0;
+            }
         }
 
         /// <summary>
@@ -175,6 +173,18 @@ namespace GLHF
                 throw new Exception();
 
             Buffer.MemoryCopy(source.ptr.ToPointer(), ptr.ToPointer(), size, size);
+        }
+
+        public void CopyFrom(byte[] data)
+        {
+            if (data.Length > size)
+                throw new Exception("Allocator does not have sufficient memory to copy byte[] data.");
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                byte* b = (Head + i);
+                *b = data[i];
+            }
         }
 
         public byte[] ToByteArray()
