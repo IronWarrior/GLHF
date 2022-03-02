@@ -27,33 +27,23 @@ namespace GLHF
         [SerializeField]
         int minLatencyMilliseconds, maxLatencyMilliseconds;
 
+        private Runner host;
+
         private IEnumerator Start()
         {
             if (FindObjectOfType<Runner>() == null)
             {
+                DontDestroyOnLoad(gameObject);
+
                 var scene = SceneManager.GetActiveScene();
 
-                Runner host = null;
+                host = null;
 
                 List<Runner> runners = new List<Runner>();
 
                 for (int i = 0; i < clients; i++)
                 {
-                    var runner = new GameObject().AddComponent<Runner>();                    
-
-                    ITransport transport = useLocalTransport ? (ITransport)new TransportLocal() : new TransportLiteNetLib();
-
-                    if (useSimulatedLatency)
-                    {
-                        try
-                        {
-                            transport.SetSimulatedLatency(new SimulatedLatency() { MaxDelay = maxLatencyMilliseconds, MinDelay = minLatencyMilliseconds });
-                        }
-                        catch (NotImplementedException)
-                        {
-                            Debug.LogError($"Attempted to set simulated latency on ITransport implementation that does not support it ({transport.GetType()}).");
-                        }
-                    }
+                    BuildRunner(out Runner runner, out ITransport transport);
 
                     if (i == 0)
                     {
@@ -62,7 +52,7 @@ namespace GLHF
                     }
                     else
                     {
-                        runner.Join(port, config, host, transport);
+                        runner.Join(port, config, transport);
                     }
 
                     runners.Add(runner);
@@ -90,8 +80,41 @@ namespace GLHF
                 SceneManager.SetActiveScene(host.Scene);
                 SceneManager.UnloadSceneAsync(scene);
             }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
 
-            Destroy(gameObject);
+        public void AddClient()
+        {
+            BuildRunner(out Runner runner, out ITransport transport);
+
+            runner.Join(port, config, transport);
+        }
+
+        public bool CanAddClient()
+        {
+            return host != null && host.Running;
+        }
+
+        private void BuildRunner(out Runner runner, out ITransport transport)
+        {
+            runner = new GameObject().AddComponent<Runner>();
+
+            transport = useLocalTransport ? (ITransport)new TransportLocal() : new TransportLiteNetLib();
+
+            if (useSimulatedLatency)
+            {
+                try
+                {
+                    transport.SetSimulatedLatency(new SimulatedLatency() { MaxDelay = maxLatencyMilliseconds, MinDelay = minLatencyMilliseconds });
+                }
+                catch (NotImplementedException)
+                {
+                    Debug.LogError($"Attempted to set simulated latency on ITransport implementation that does not support it ({transport.GetType()}).");
+                }
+            }
         }
     }
 }

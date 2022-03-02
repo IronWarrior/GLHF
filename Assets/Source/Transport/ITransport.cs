@@ -8,7 +8,7 @@ namespace GLHF.Transport
     /// </summary>
     public interface ITransport
     {
-        event Action OnPeerConnected;
+        event Action<int> OnPeerConnected;
         
         // TODO: Should replace byte with ByteBuffer for easier use.
         event Action<int, float, byte[]> OnReceive;
@@ -19,6 +19,7 @@ namespace GLHF.Transport
         void Update();
 
         // TODO: Same as above, replace with ByteBuffer.
+        void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod);
         void SendToAll(byte[] data, DeliveryMethod deliveryMethod);
         void SetSimulatedLatency(SimulatedLatency simulatedLatency);
     }

@@ -78,7 +78,7 @@ namespace GLHF
             Connected = true;
         }
 
-        public void Join(int port, Config config, Runner runner, ITransport transport = null)
+        public void Join(int port, Config config, ITransport transport = null)
         {
             this.config = config;
 
@@ -86,8 +86,6 @@ namespace GLHF
 
             Role = RunnerRole.Client;
             DontDestroyOnLoad(gameObject);
-
-            Debug.Assert(runner.Role == RunnerRole.Host);
 
             name = "Client";
 
@@ -262,7 +260,7 @@ namespace GLHF
             }
         }
 
-        private void Transport_OnPeerConnected()
+        private void Transport_OnPeerConnected(int peerId)
         {
             if (Role == RunnerRole.Host)
             {

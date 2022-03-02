@@ -9,7 +9,7 @@ namespace GLHF.Transport
     /// </summary>
     public class TransportLocal : ITransport
     {
-        public event Action OnPeerConnected;
+        public event Action<int> OnPeerConnected;
         public event Action<int, float, byte[]> OnReceive;
 
         private int ID;
@@ -93,11 +93,45 @@ namespace GLHF.Transport
             this.simulatedLatency = simulatedLatency;
         }
 
+        public void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod)
+        {
+            TransportLocal peer = peers[peerId];
+
+            Channel channel = deliveryMethod == DeliveryMethod.ReliableOrdered ? reliableOrderedChannel : reliableChannel;
+
+            Packet packet = new Packet()
+            {
+                SendingPeerID = peer.ID,
+                Data = data,
+                SequenceNumber = channel.SendSequenceNumber,
+                SendTime = Time.time,
+                DeliveryMethod = deliveryMethod
+            };
+
+            channel.SendSequenceNumber++;
+
+            if (simulatedLatency.Equals(default(SimulatedLatency)))
+                peer.ReceiveInternal(packet);
+            else
+            {
+                float latency = UnityEngine.Random.Range(simulatedLatency.MinDelay, simulatedLatency.MaxDelay) / 1000f;
+
+                LatencyPacket latencyPacket = new LatencyPacket()
+                {
+                    Packet = packet,
+                    Latency = latency,
+                    TargetPeer = peer
+                };
+
+                pendingSendPackets.Add(latencyPacket);
+            }
+        }
+
         public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
         {
-            foreach (var peer in peers)
+            for (int i = 0; i < peers.Count; i++)
             {
-                Send(peer, data, deliveryMethod);
+                Send(i, data, deliveryMethod);
             }
         }
 
@@ -123,39 +157,6 @@ namespace GLHF.Transport
             }
         }
 
-        // TODO: Should be public, need to abstract TransportLocal.
-        private void Send(TransportLocal peer, byte[] data, DeliveryMethod deliveryMethod)
-        {
-            Channel channel = deliveryMethod == DeliveryMethod.ReliableOrdered ? reliableOrderedChannel : reliableChannel;
-
-            Packet packet = new Packet()
-            {
-                SendingPeerID = peer.ID,
-                Data = data,
-                SequenceNumber = channel.SendSequenceNumber,
-                SendTime = Time.time,
-                DeliveryMethod = deliveryMethod
-            };
-            
-            channel.SendSequenceNumber++;
-
-            if (simulatedLatency.Equals(default(SimulatedLatency)))
-                peer.ReceiveInternal(packet);
-            else
-            {
-                float latency = UnityEngine.Random.Range(simulatedLatency.MinDelay, simulatedLatency.MaxDelay) / 1000f;
-
-                LatencyPacket latencyPacket = new LatencyPacket()
-                {
-                    Packet = packet,
-                    Latency = latency,
-                    TargetPeer = peer
-                };
-
-                pendingSendPackets.Add(latencyPacket);
-            }
-        }
-
         private void ConnectionRequest(TransportLocal client)
         {
             // TODO: Decide reject/accept here.
@@ -169,7 +170,7 @@ namespace GLHF.Transport
         {
             peers.Add(peer);
 
-            OnPeerConnected?.Invoke();
+            OnPeerConnected?.Invoke(peer.ID);
         }
 
         private void ReceiveInternal(Packet packet)

@@ -112,6 +112,16 @@ namespace GLHF.Editor
                 EditorGUILayout.EndHorizontal();
             }
 
+            var bootstrap = FindObjectOfType<Bootstrap>();
+
+            if (bootstrap != null && bootstrap.CanAddClient())
+            {
+                if (GUILayout.Button("Add Client"))
+                {
+                    bootstrap.AddClient();
+                }
+            }
+
             EditorGUILayout.EndVertical();
         }
     }

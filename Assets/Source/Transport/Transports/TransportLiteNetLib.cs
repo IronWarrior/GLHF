@@ -5,7 +5,7 @@ namespace GLHF.Transport
 {
     public class TransportLiteNetLib : ITransport
     {
-        public event Action OnPeerConnected;
+        public event Action<int> OnPeerConnected;
         public event Action<int, float, byte[]> OnReceive;
 
         private readonly NetManager netManager;
@@ -44,6 +44,11 @@ namespace GLHF.Transport
             netManager.Stop();
         }
 
+        public void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod)
+        {
+            netManager.ConnectedPeerList[peerId].Send(data, GetDeliveryMethod(deliveryMethod));
+        }
+
         public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
         {
             netManager.SendToAll(data, GetDeliveryMethod(deliveryMethod));
@@ -61,7 +66,7 @@ namespace GLHF.Transport
 
         private void PeerConnectedEvent(NetPeer peer)
         {
-            OnPeerConnected?.Invoke();
+            OnPeerConnected?.Invoke(peer.Id);
         }
 
         private void NetworkErrorEvent(System.Net.IPEndPoint endPoint, System.Net.Sockets.SocketError socketError)
