@@ -17,7 +17,7 @@ namespace GLHF
         {
             float targetBufferSize = TargetBufferSize(deltaTime, rttStandardDeviation);
 
-            if (targetBufferSize <= 0)
+            if (targetBufferSize < 0.0001f)
             {
                 return 1;
             }

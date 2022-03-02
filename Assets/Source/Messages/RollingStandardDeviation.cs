@@ -2,38 +2,51 @@
 // sourced from: https://gist.github.com/musically-ut/1502045/106af3cf8bd4db0c8581218759040b058da778d3
 public class RollingStandardDeviation
 {
-    private long count;
+    private int count;
+    private int index;
 
-    private float previousMean, currentMean;
-    private float previousS, currentS;
-    private float currentVariance;
+    private readonly float[] values;
+
+    public RollingStandardDeviation(int window)
+    {
+        values = new float[window];
+    }
 
     public void Insert(float f)
     {
         count++;
 
-        if (count == 1)
-        {
-            // Set the very first values.
-            currentMean = f;
-            currentS = 0;
-            currentVariance = currentS;
-        }
-        else
-        {
-            // Save the previous values.
-            previousMean = currentMean;
-            previousS = currentS;
+        if (count > values.Length)
+            count = values.Length;
 
-            // Update the current values.
-            currentMean = previousMean + (f - previousMean) / count;
-            currentS = previousS + (f - previousMean) * (f - currentMean);
-            currentVariance = currentS / (count - 1);
-        }
+        values[index] = f;
+
+        index = (index + 1) % values.Length;
     }
 
     public float CalculateStandardDeviation()
     {
-        return (float)System.Math.Sqrt(currentVariance);
+        if (count == 0)
+            return 0;
+
+        float mean = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            mean += values[i];
+        }
+
+        mean /= count;
+
+        float sum = 0;
+
+        for (int i = 0; i < count; i++)
+        {
+            sum += (float)System.Math.Pow(values[i] - mean, 2);
+        }
+
+        sum /= count;
+
+        return (float)System.Math.Sqrt(sum);
     }
 }

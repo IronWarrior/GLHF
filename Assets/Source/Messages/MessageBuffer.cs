@@ -12,7 +12,7 @@ namespace GLHF
         public float RttStandardDeviation => standardDeviation.CalculateStandardDeviation();
 
         private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
-        private readonly RollingStandardDeviation standardDeviation = new RollingStandardDeviation();
+        private readonly RollingStandardDeviation standardDeviation = new RollingStandardDeviation(100);
 
         public void Insert(ServerInputMessage message, float rtt)
         {

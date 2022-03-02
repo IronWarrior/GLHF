@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TickRate: 20
   JitterTimescale:
-    timescaleMinimum: 0.9
+    timescaleMinimum: 0.5
     timescaleMaximum: 1.1
   Prefabs:
   - {fileID: -2162236619322153046, guid: 58406ba439be7ab418ed13a128703a46, type: 3}
