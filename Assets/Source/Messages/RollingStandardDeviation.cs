@@ -1,5 +1,4 @@
-// Knuth numerically stable standard deviation,
-// sourced from: https://gist.github.com/musically-ut/1502045/106af3cf8bd4db0c8581218759040b058da778d3
+// TODO: Update with rolling window standard deviation for performance.
 public class RollingStandardDeviation
 {
     private int count;
