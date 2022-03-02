@@ -57,11 +57,13 @@ namespace GLHF
         {
             int offset = 0;
 
-            while (offset < this.size)
+            while (offset + size < this.size)
             {
                 Block* block = (Block*)GetPtrAt(offset);
 
-                if (!block->InUse && block->Size <= size)
+                // Blocks of size zero have not been allocated and can be used
+                // regardless of requested size.
+                if (!block->InUse && (block->Size == 0 || block->Size >= size))
                 {
                     return offset;
                 }
