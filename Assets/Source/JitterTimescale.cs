@@ -10,37 +10,30 @@ namespace GLHF
     [System.Serializable]
     public class JitterTimescale
     {
+        public float timescaleMinimum = 0.7f;
+        public float timescaleMaximum = 1.2f;
+
         public float CalculateTimescale(float deltaTime, int currentBufferSize, float rttStandardDeviation)
         {
-            int targetBufferSize = TargetBufferSize(deltaTime, rttStandardDeviation);
-            float t = (float)currentBufferSize / targetBufferSize;
+            float targetBufferSize = TargetBufferSize(deltaTime, rttStandardDeviation);
 
-            // TODO: This should be placed in a curve or function something.
-            float timescale;
-
-            if (t < 0.5f)
+            if (targetBufferSize <= 0)
             {
-                timescale = 0.7f;
-            }
-            else if (t < 1)
-            {
-                timescale = 0.9f;
-            }
-            else if (t > 1.05f)
-            {
-                timescale = 1.05f;
+                return 1;
             }
             else
             {
-                timescale = 1;
-            }
 
-            return timescale;
+                float bufferPercent = currentBufferSize / targetBufferSize;
+                float timescale = UnityEngine.Mathf.Clamp(bufferPercent, timescaleMinimum, timescaleMaximum);
+
+                return timescale;
+            }
         }
 
-        public int TargetBufferSize(float deltaTime, float rttStandardDeviation)
+        public float TargetBufferSize(float deltaTime, float rttStandardDeviation)
         {
-            return (int)System.Math.Round(rttStandardDeviation / deltaTime);
+            return (float)System.Math.Round(rttStandardDeviation / deltaTime);
         }
     }
 }

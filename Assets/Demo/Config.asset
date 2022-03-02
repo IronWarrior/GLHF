@@ -13,7 +13,9 @@ MonoBehaviour:
   m_Name: Config
   m_EditorClassIdentifier: 
   TickRate: 20
-  JitterBufferSize: 1
+  JitterTimescale:
+    timescaleMinimum: 0.9
+    timescaleMaximum: 1.1
   Prefabs:
   - {fileID: -2162236619322153046, guid: 58406ba439be7ab418ed13a128703a46, type: 3}
   - {fileID: 3317265630580068342, guid: 6d802bc5f37823644b8f3266ba0ec687, type: 3}

@@ -444,7 +444,7 @@ namespace GLHF
             return pendingInputsClientSide.RttStandardDeviation;
         }
 
-        public int TargetMessageBufferSize()
+        public float TargetMessageBufferSize()
         {
             Debug.Assert(Role == RunnerRole.Client);
 
