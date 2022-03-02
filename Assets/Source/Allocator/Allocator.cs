@@ -43,6 +43,18 @@ namespace GLHF
             CopyFrom(allocator);
         }
 
+        public Allocator(int blocks, byte[] data) : this(blocks)
+        {
+            if (size < data.Length)
+                throw new Exception("Allocator created with insufficient blocks to copy byte[] data.");
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                byte* b = (Head + i);
+                *b = data[i];
+            }
+        }
+
         ~Allocator()
         {
             Marshal.FreeHGlobal(ptr);
@@ -72,6 +84,27 @@ namespace GLHF
             }
 
             throw new OutOfMemoryException();
+        }
+
+        private int CalculateAllocatedMemory()
+        {
+            int offset = 0;
+
+            while (offset < size)
+            {
+                Block* block = (Block*)GetPtrAt(offset);
+
+                // Blocks of size zero have not been allocated, indicating
+                // the end of allocated memory.
+                if (block->Size == 0)
+                {
+                    return offset;
+                }
+
+                offset += sizeof(Block) + block->Size;
+            }
+
+            return size;
         }
 
         /// <summary>
@@ -142,6 +175,16 @@ namespace GLHF
                 throw new Exception();
 
             Buffer.MemoryCopy(source.ptr.ToPointer(), ptr.ToPointer(), size, size);
+        }
+
+        public byte[] ToByteArray()
+        {
+            int allocatedMemoryByteCount = CalculateAllocatedMemory();
+
+            byte[] data = new byte[allocatedMemoryByteCount];
+            Marshal.Copy(ptr, data, 0, allocatedMemoryByteCount);
+
+            return data;
         }
     }
 }
