@@ -1,5 +1,6 @@
 using LiteNetLib;
 using System;
+using System.Collections.Generic;
 
 namespace GLHF.Transport
 {
@@ -10,6 +11,8 @@ namespace GLHF.Transport
 
         private readonly NetManager netManager;
         private readonly EventBasedNetListener listener;
+
+        private readonly Dictionary<int, NetPeer> peers = new Dictionary<int, NetPeer>();
 
         public TransportLiteNetLib()
         {
@@ -46,7 +49,7 @@ namespace GLHF.Transport
 
         public void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod)
         {
-            netManager.ConnectedPeerList[peerId].Send(data, GetDeliveryMethod(deliveryMethod));
+            peers[peerId].Send(data, GetDeliveryMethod(deliveryMethod));
         }
 
         public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
@@ -66,6 +69,8 @@ namespace GLHF.Transport
 
         private void PeerConnectedEvent(NetPeer peer)
         {
+            peers.Add(peer.Id, peer);
+
             OnPeerConnected?.Invoke(peer.Id);
         }
 

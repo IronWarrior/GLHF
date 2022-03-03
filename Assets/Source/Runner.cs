@@ -144,6 +144,8 @@ namespace GLHF
             {
                 if (msgType == MessageType.Start)
                 {
+                    UnityEngine.Debug.Log($"Receive on {name}");
+
                     int sceneIndex = buffer.Get<int>();
                     PlayerCount = buffer.Get<int>();                    
 
