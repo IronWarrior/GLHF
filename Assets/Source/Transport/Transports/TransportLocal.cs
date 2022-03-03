@@ -32,7 +32,7 @@ namespace GLHF.Transport
 
         private readonly Channel reliableChannel = new Channel();
         private readonly Channel reliableOrderedChannel = new Channel();
-        private readonly List<TransportLocal> peers = new List<TransportLocal>();
+        private readonly Dictionary<int, TransportLocal> peers = new Dictionary<int, TransportLocal>();
 
         private static TransportLocal listeningTransport;
 
@@ -168,7 +168,7 @@ namespace GLHF.Transport
 
         private void OnPeerConnectedInternal(TransportLocal peer)
         {
-            peers.Add(peer);
+            peers.Add(peer.ID, peer);
 
             OnPeerConnected?.Invoke(peer.ID);
         }
