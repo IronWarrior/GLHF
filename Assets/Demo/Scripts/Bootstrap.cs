@@ -29,6 +29,8 @@ namespace GLHF
 
         private Runner host;
 
+        private List<Runner> runners;
+
         private IEnumerator Start()
         {
             if (FindObjectOfType<Runner>() == null)
@@ -39,7 +41,7 @@ namespace GLHF
 
                 host = null;
 
-                List<Runner> runners = new List<Runner>();
+                runners = new List<Runner>();
 
                 for (int i = 0; i < clients; i++)
                 {
@@ -47,11 +49,13 @@ namespace GLHF
 
                     if (i == 0)
                     {
+                        runner.name = "Host";
                         runner.Host(port, config, transport);
                         host = runner;
                     }
                     else
                     {
+                        runner.name = $"Client {i}";
                         runner.Join(port, config, transport);
                     }
 
@@ -90,7 +94,10 @@ namespace GLHF
         {
             BuildRunner(out Runner runner, out ITransport transport);
 
+            runner.name = $"Client {runners.Count - 1}";
             runner.Join(port, config, transport);
+
+            runners.Add(runner);
         }
 
         public bool CanAddClient()

@@ -160,10 +160,10 @@ namespace GLHF.Transport
         private void ConnectionRequest(TransportLocal client)
         {
             // TODO: Decide reject/accept here.
+            client.ID = peers.Count;
+
             OnPeerConnectedInternal(client);
             client.OnPeerConnectedInternal(this);
-
-            client.ID = peers.Count - 1;
         }
 
         private void OnPeerConnectedInternal(TransportLocal peer)

@@ -32,13 +32,20 @@ namespace GLHF.Editor
 
             Runner runner = (Runner)target;
 
-            if (Application.isPlaying && runner.Running)
+            if (Application.isPlaying)
             {
-                if (runner.Role == Runner.RunnerRole.Client)
+                if (runner.Running)
                 {
-                    GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
-                    GUILayout.Label($"Stable Buffer Size: {runner.TargetMessageBufferSize()}");
-                    GUILayout.Label($"Rtt Standard Dev: {(runner.PingStandardDeviation() * 1000):F2}");                    
+                    if (runner.Role == Runner.RunnerRole.Client)
+                    {
+                        GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
+                        GUILayout.Label($"Stable Buffer Size: {runner.TargetMessageBufferSize()}");
+                        GUILayout.Label($"Rtt Standard Dev: {(runner.PingStandardDeviation() * 1000):F2}");
+                    }
+                }
+                else
+                {
+                    GUILayout.Label($"Runner not running");
                 }
             }
         }

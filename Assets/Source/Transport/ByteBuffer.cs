@@ -35,6 +35,14 @@ namespace GLHF.Transport
             }
         }
 
+        public void Put<T>(T[] values) where T : unmanaged
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                Put(values[i]);
+            }
+        }
+
         public T Get<T>() where T : unmanaged
         {
             fixed (byte* p = Data)
@@ -44,6 +52,18 @@ namespace GLHF.Transport
 
                 return value;
             }
+        }
+
+        public T[] Get<T>(int count) where T : unmanaged
+        {
+            T[] values = new T[count];
+
+            for (int i = 0; i < count; i++)
+            {
+                values[i] = Get<T>();
+            }
+
+            return values;
         }
     }
 }

@@ -61,8 +61,6 @@ namespace GLHF
             Role = RunnerRole.Host;
             DontDestroyOnLoad(gameObject);
 
-            name = "Host";
-
             if (transport == null)
                 transport = new TransportLocal();
 
@@ -87,8 +85,6 @@ namespace GLHF
             Role = RunnerRole.Client;
             DontDestroyOnLoad(gameObject);
 
-            name = "Client";
-
             if (transport == null)
                 transport = new TransportLocal();
 
@@ -102,6 +98,83 @@ namespace GLHF
         }
         #endregion
 
+        private void Transport_OnPeerConnected(int peerId)
+        {
+            if (Role == RunnerRole.Host)
+            {
+                currentInputs.Add(new StateInput());
+                PlayerCount++;
+
+                if (Running)
+                {
+                    // TODO: Make a message class for this.
+                    ByteBuffer buffer = new ByteBuffer();
+                    buffer.Put((byte)MessageType.Start);
+                    buffer.Put(0);
+                    buffer.Put(PlayerCount);
+                    buffer.Put(true);
+                    buffer.Put(Tick);
+
+                    byte[] data = snapshot.Allocator.ToByteArray();
+
+                    buffer.Put(data.Length);
+                    buffer.Put(data);
+
+                    transport.Send(peerId, buffer.Data, DeliveryMethod.Reliable);
+                }
+            }
+
+            if (Role == RunnerRole.Client)
+                Connected = true;
+        }
+
+        private void Transport_OnReceive(int id, float rtt, byte[] data)
+        {
+            ByteBuffer buffer = new ByteBuffer(data);
+            MessageType msgType = (MessageType)buffer.Get<byte>();
+
+            if (Role == RunnerRole.Host)
+            {
+                Debug.Assert(msgType == MessageType.Input);
+
+                ClientInputMessage message = new ClientInputMessage(buffer);
+                currentInputs[id + 1] = message.Input;
+            }
+            else
+            {
+                if (msgType == MessageType.Start)
+                {
+                    int sceneIndex = buffer.Get<int>();
+                    PlayerCount = buffer.Get<int>();                    
+
+                    bool hasState = buffer.Get<bool>();
+
+                    Action OnComplete = null;
+
+                    if (hasState)
+                    {
+                        int tick = buffer.Get<int>();
+                        int dataLength = buffer.Get<int>();
+                        byte[] state = buffer.Get<byte>(dataLength);
+
+                        OnComplete = () =>
+                        {
+                            Tick = tick;
+                            snapshot.Allocator.CopyFrom(state);
+                            RebuildWorld();
+                        };
+                    }
+
+                    LoadSceneAndStartGame(sceneIndex, OnComplete);
+                }
+                else if (msgType == MessageType.Input)
+                {
+                    ServerInputMessage message = new ServerInputMessage(buffer);
+                    pendingInputsClientSide.Insert(message, rtt);
+                }
+            }
+        }
+
         #region Game and Scene Managment
         public void StartGame()
         {
@@ -114,15 +187,15 @@ namespace GLHF
 
             transport.SendToAll(buffer.Data, DeliveryMethod.ReliableOrdered);
 
-            LoadSceneAndStartGame(0);
+            LoadSceneAndStartGame(0, null);
         }
 
-        private void LoadSceneAndStartGame(int index)
+        private void LoadSceneAndStartGame(int index, Action OnComplete)
         {
-            StartCoroutine(LoadSceneAndStartGameRoutine(index, true));
+            StartCoroutine(LoadSceneAndStartGameRoutine(index, true, OnComplete));
         }
 
-        private IEnumerator LoadSceneAndStartGameRoutine(int buildIndex, bool additive = false)
+        private IEnumerator LoadSceneAndStartGameRoutine(int buildIndex, bool additive = false, Action OnComplete = null)
         {
             var async = UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(buildIndex, additive ? UnityEngine.SceneManagement.LoadSceneMode.Additive : UnityEngine.SceneManagement.LoadSceneMode.Single);
             int index = UnityEngine.SceneManagement.SceneManager.sceneCount - 1;
@@ -131,6 +204,8 @@ namespace GLHF
             yield return new WaitUntil(() => async.isDone);
 
             StartRunning();
+
+            OnComplete?.Invoke();
         }
         #endregion
 
@@ -257,47 +332,6 @@ namespace GLHF
                 }
 
                 current = next;
-            }
-        }
-
-        private void Transport_OnPeerConnected(int peerId)
-        {
-            if (Role == RunnerRole.Host)
-            {
-                currentInputs.Add(new StateInput());
-                PlayerCount++;
-            }
-
-            if (Role == RunnerRole.Client)
-                Connected = true;
-        }
-
-        private void Transport_OnReceive(int id, float rtt, byte[] data)
-        {
-            ByteBuffer buffer = new ByteBuffer(data);
-            MessageType msgType = (MessageType)buffer.Get<byte>();
-
-            if (Role == RunnerRole.Host)
-            {
-                Debug.Assert(msgType == MessageType.Input);
-
-                ClientInputMessage message = new ClientInputMessage(buffer);
-                currentInputs[id + 1] = message.Input;
-            }
-            else
-            {
-                if (msgType == MessageType.Start)
-                {
-                    int sceneIndex = buffer.Get<int>();
-                    PlayerCount = buffer.Get<int>();
-
-                    LoadSceneAndStartGame(sceneIndex);
-                }
-                else if (msgType == MessageType.Input)
-                {
-                    ServerInputMessage message = new ServerInputMessage(buffer);
-                    pendingInputsClientSide.Insert(message, rtt);
-                }
             }
         }
 
