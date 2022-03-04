@@ -90,11 +90,21 @@ namespace GLHF
 
             transport.OnReceive += Transport_OnReceive;
             transport.OnPeerConnected += Transport_OnPeerConnected;
+            transport.OnPeerDisconnected += Transport_OnPeerDisconnected;
             transport.Connect("localhost", port);
 
             pendingInputsClientSide = new MessageBuffer();
 
             this.transport = transport;
+        }
+
+        public void Shutdown()
+        {
+            transport.Shutdown();
+
+            UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(Scene);
+
+            Running = false;
         }
         #endregion
 
@@ -126,6 +136,13 @@ namespace GLHF
 
             if (Role == RunnerRole.Client)
                 Connected = true;
+        }
+
+        private void Transport_OnPeerDisconnected(int obj)
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            Shutdown();
         }
 
         private void Transport_OnReceive(int id, float rtt, byte[] data)

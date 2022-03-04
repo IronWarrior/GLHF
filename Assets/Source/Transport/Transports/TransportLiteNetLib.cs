@@ -7,6 +7,7 @@ namespace GLHF.Transport
     public class TransportLiteNetLib : ITransport
     {
         public event Action<int> OnPeerConnected;
+        public event Action<int> OnPeerDisconnected;
         public event Action<int, float, byte[]> OnReceive;
 
         private readonly NetManager netManager;
@@ -19,7 +20,7 @@ namespace GLHF.Transport
             listener = new EventBasedNetListener();
             listener.NetworkReceiveEvent += NetworkReceiveEvent;
             listener.PeerConnectedEvent += PeerConnectedEvent;
-            listener.NetworkErrorEvent += NetworkErrorEvent;
+            listener.PeerDisconnectedEvent += PeerDisconnectedEvent;
 
             netManager = new NetManager(listener);
         }
@@ -59,7 +60,7 @@ namespace GLHF.Transport
 
         public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
         {
-            throw new NotImplementedException();
+
         }
 
         private void ConnectionRequestEvent(ConnectionRequest request)
@@ -74,8 +75,11 @@ namespace GLHF.Transport
             OnPeerConnected?.Invoke(peer.Id);
         }
 
-        private void NetworkErrorEvent(System.Net.IPEndPoint endPoint, System.Net.Sockets.SocketError socketError)
+        private void PeerDisconnectedEvent(NetPeer peer, DisconnectInfo disconnectInfo)
         {
+            peers.Remove(peer.Id);
+
+            OnPeerDisconnected?.Invoke(peer.Id);
         }
 
         private void NetworkReceiveEvent(NetPeer peer, NetPacketReader reader, LiteNetLib.DeliveryMethod deliveryMethod)

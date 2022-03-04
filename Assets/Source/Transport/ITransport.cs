@@ -9,7 +9,8 @@ namespace GLHF.Transport
     public interface ITransport
     {
         event Action<int> OnPeerConnected;
-        
+        event Action<int> OnPeerDisconnected;
+
         // TODO: Should replace byte with ByteBuffer for easier use.
         event Action<int, float, byte[]> OnReceive;
 

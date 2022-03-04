@@ -45,34 +45,39 @@ namespace GLHF.Editor
             }
         }
 
+        private void RefreshRunners()
+        {
+            var runners = FindObjectsOfType<Runner>(true);
+            runners = runners.Reverse().ToArray();
+
+            var newCachedRunners = new CachedRunner[runners.Length];
+
+            for (int i = 0; i < runners.Length; i++)
+            {
+                newCachedRunners[i] = new CachedRunner() { Runner = runners[i] };
+
+                if (cachedRunners != null && i < cachedRunners.Length)
+                {
+                    newCachedRunners[i].Visible = cachedRunners[i].Visible;
+                    newCachedRunners[i].PollInput = cachedRunners[i].PollInput;
+                }
+                else
+                {
+                    newCachedRunners[i].Visible = true;
+                    newCachedRunners[i].PollInput = true;
+                }
+            }
+
+            cachedRunners = newCachedRunners;
+
+            ApplyChangesToAllRunners();
+        }
+
         private void OnGUI()
         {
             if ((cachedRunners == null || cachedRunners.Length == 0 || !cachedRunners[0].Valid) && Application.isPlaying)
             {
-                var runners = FindObjectsOfType<Runner>(true);
-                runners = runners.Reverse().ToArray();
-
-                var newCachedRunners = new CachedRunner[runners.Length];
-
-                for (int i = 0; i < runners.Length; i++)
-                {
-                    newCachedRunners[i] = new CachedRunner() { Runner = runners[i] };
-
-                    if (cachedRunners != null && i < cachedRunners.Length)
-                    {
-                        newCachedRunners[i].Visible = cachedRunners[i].Visible;
-                        newCachedRunners[i].PollInput = cachedRunners[i].PollInput;
-                    }
-                    else
-                    {
-                        newCachedRunners[i].Visible = true;
-                        newCachedRunners[i].PollInput = true;
-                    }
-                }
-
-                cachedRunners = newCachedRunners;
-
-                ApplyChangesToAllRunners();
+                RefreshRunners();
             }
 
             if (cachedRunners == null || cachedRunners.Length == 0)
@@ -108,7 +113,14 @@ namespace GLHF.Editor
                         ApplyChangesToAllRunners();
                 }
 
-                
+                EditorGUI.BeginDisabledGroup(!cachedRunners[i].Valid || !cachedRunners[i].Runner.Running);
+
+                if (GUILayout.Button("Disconnect"))
+                {
+                    cachedRunners[i].Runner.Shutdown();
+                }
+
+                EditorGUI.EndDisabledGroup();                
                 EditorGUILayout.EndHorizontal();
             }
 
@@ -119,6 +131,8 @@ namespace GLHF.Editor
                 if (GUILayout.Button("Add Client"))
                 {
                     bootstrap.AddClient();
+
+                    RefreshRunners();
                 }
             }
 

@@ -10,6 +10,7 @@ namespace GLHF.Transport
     public class TransportLocal : ITransport
     {
         public event Action<int> OnPeerConnected;
+        public event Action<int> OnPeerDisconnected;
         public event Action<int, float, byte[]> OnReceive;
 
         private int ID;
@@ -86,6 +87,13 @@ namespace GLHF.Transport
         {
             if (listeningTransport == this)
                 listeningTransport = null;
+
+            foreach (var peer in peers.Values)
+            {
+                peer.OnPeerDisconnectedInternal(this);
+            }
+
+            peers.Clear();
         }
 
         public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
@@ -129,9 +137,9 @@ namespace GLHF.Transport
 
         public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
         {
-            for (int i = 0; i < peers.Count; i++)
+            foreach (var peer in peers)
             {
-                Send(i, data, deliveryMethod);
+                Send(peer.Key, data, deliveryMethod);
             }
         }
 
@@ -171,6 +179,13 @@ namespace GLHF.Transport
             peers.Add(peer.ID, peer);
 
             OnPeerConnected?.Invoke(peer.ID);
+        }
+
+        private void OnPeerDisconnectedInternal(TransportLocal peer)
+        {
+            peers.Remove(peer.ID);
+
+            OnPeerDisconnected?.Invoke(peer.ID);
         }
 
         private void ReceiveInternal(Packet packet)
