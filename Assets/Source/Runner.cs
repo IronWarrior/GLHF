@@ -499,6 +499,11 @@ namespace GLHF
 
             return config.JitterTimescale.TargetBufferSize(DeltaTime, pendingInputsClientSide.RttStandardDeviation);
         }
+
+        public float Timescale()
+        {
+            return config.JitterTimescale.CalculateTimescale(DeltaTime, pendingInputsClientSide.CurrentSize, pendingInputsClientSide.RttStandardDeviation);
+        }
         #endregion
     }
 }

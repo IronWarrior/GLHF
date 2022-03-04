@@ -40,7 +40,8 @@ namespace GLHF.Editor
                     {
                         GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
                         GUILayout.Label($"Stable Buffer Size: {runner.TargetMessageBufferSize()}");
-                        GUILayout.Label($"Rtt Standard Dev: {(runner.PingStandardDeviation() * 1000):F2}");
+                        GUILayout.Label($"Rtt Standard Dev: {runner.PingStandardDeviation() * 1000:F2}");
+                        GUILayout.Label($"Timescale: {runner.Timescale():F2}");
                     }
                 }
                 else
