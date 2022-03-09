@@ -55,12 +55,13 @@ namespace GLHF.Transport
 
         public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)
         {
-            netManager.SendToAll(data, GetDeliveryMethod(deliveryMethod));
+            foreach (var peer in peers.Values)
+                peer.Send(data, GetDeliveryMethod(deliveryMethod));
         }
 
         public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
         {
-
+            throw new NotImplementedException();
         }
 
         private void ConnectionRequestEvent(ConnectionRequest request)

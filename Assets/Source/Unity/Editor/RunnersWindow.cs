@@ -19,12 +19,15 @@ namespace GLHF.Editor
             {
                 Runner.PollInput = PollInput;
 
-                var roots = Runner.Scene.GetRootGameObjects();
+                if (Runner.Scene.IsValid())
+                {
+                    var roots = Runner.Scene.GetRootGameObjects();
 
-                if (Visible)
-                    SceneVisibilityManager.instance.Show(roots, true);
-                else
-                    SceneVisibilityManager.instance.Hide(roots, true);
+                    if (Visible)
+                        SceneVisibilityManager.instance.Show(roots, true);
+                    else
+                        SceneVisibilityManager.instance.Hide(roots, true);
+                }
             }
         }
 
@@ -85,6 +88,18 @@ namespace GLHF.Editor
 
             EditorGUILayout.BeginVertical();
 
+            var bootstrap = FindObjectOfType<Bootstrap>();
+
+            if (bootstrap != null && bootstrap.CanAddClient())
+            {
+                if (GUILayout.Button("Add Client"))
+                {
+                    bootstrap.AddClient();
+
+                    RefreshRunners();
+                }
+            }
+
             for (int i = 0; i < cachedRunners.Length; i++)
             {
                 EditorGUILayout.BeginHorizontal();
@@ -122,18 +137,6 @@ namespace GLHF.Editor
 
                 EditorGUI.EndDisabledGroup();                
                 EditorGUILayout.EndHorizontal();
-            }
-
-            var bootstrap = FindObjectOfType<Bootstrap>();
-
-            if (bootstrap != null && bootstrap.CanAddClient())
-            {
-                if (GUILayout.Button("Add Client"))
-                {
-                    bootstrap.AddClient();
-
-                    RefreshRunners();
-                }
             }
 
             EditorGUILayout.EndVertical();

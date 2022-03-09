@@ -10,6 +10,7 @@ namespace GLHF
     {
         public int CurrentSize => messages.Count;
         public float RttStandardDeviation => standardDeviation.CalculateStandardDeviation();
+        public int NextTick => messages.Count > 0 ? messages[messages.Count - 1].Tick : -1;
 
         private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
         private readonly RollingStandardDeviation standardDeviation = new RollingStandardDeviation(100);
@@ -24,7 +25,7 @@ namespace GLHF
 
         public bool TryPop(int tick, out ServerInputMessage message)
         {
-            if (messages.Count > 0 && messages[messages.Count - 1].Tick == tick)
+            if (messages.Count > 0 && NextTick == tick)
             {
                 message = messages[messages.Count - 1];
                 messages.RemoveAt(messages.Count - 1);

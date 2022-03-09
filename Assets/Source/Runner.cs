@@ -140,8 +140,6 @@ namespace GLHF
 
         private void Transport_OnPeerDisconnected(int obj)
         {
-            Debug.Assert(Role == RunnerRole.Client);
-
             Shutdown();
         }
 
@@ -484,6 +482,13 @@ namespace GLHF
             Debug.Assert(Role == RunnerRole.Client);
 
             return pendingInputsClientSide.CurrentSize;
+        }
+
+        public int NextTick()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return pendingInputsClientSide.NextTick;
         }
 
         public float PingStandardDeviation()
