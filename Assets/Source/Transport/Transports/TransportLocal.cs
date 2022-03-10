@@ -59,7 +59,7 @@ namespace GLHF.Transport
         public void Connect(string _, int __)
         {
             if (listeningTransport == null)
-                throw new Exception("No listening transport.");
+                throw new Exception("No listening local transport.");
 
             listeningTransport.ConnectionRequest(this);
         }

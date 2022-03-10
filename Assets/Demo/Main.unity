@@ -221,7 +221,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: 041163e14507885418a5f79115eab73c, type: 2}
   clients: 1
   port: 7778
-  useLocalTransport: 0
+  useLocalTransport: 1
   useSimulatedLatency: 0
   minLatencyMilliseconds: 0
   maxLatencyMilliseconds: 1000

@@ -25,19 +25,23 @@ namespace GLHF
 
         public bool TryPop(int tick, out ServerInputMessage message)
         {
-            if (messages.Count > 0 && NextTick == tick)
+            if (messages.Count > 0)
             {
-                message = messages[messages.Count - 1];
-                messages.RemoveAt(messages.Count - 1);
+                if (NextTick < tick)
+                {
+                    throw new System.Exception($"Requesting tick {tick}, indiciating message buffer's next tick {NextTick} has been skipped.");
+                }
+                else if (NextTick == tick)
+                {
+                    message = messages[messages.Count - 1];
+                    messages.RemoveAt(messages.Count - 1);
 
-                return true;
+                    return true;
+                }
             }
-            else
-            {
-                message = default;
 
-                return false;
-            }
+            message = default;
+            return false;            
         }
 
         private int CompareMessages(ServerInputMessage a, ServerInputMessage b)
