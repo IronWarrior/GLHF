@@ -76,7 +76,7 @@ namespace GLHF
             Connected = true;
         }
 
-        public void Join(int port, Config config, ITransport transport = null)
+        public void Join(int port, string ip, Config config, ITransport transport = null)
         {
             this.config = config;
 

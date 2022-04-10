@@ -34,9 +34,9 @@ namespace GLHF.Editor
 
             if (Application.isPlaying)
             {
-                if (runner.Running)
+                if (runner.Role == Runner.RunnerRole.Client)
                 {
-                    if (runner.Role == Runner.RunnerRole.Client)
+                    if (runner.Running)
                     {
                         GUILayout.Label($"Tick: {runner.Tick}");
                         GUILayout.Label($"Message Next Tick: {runner.NextTick()}");
@@ -45,10 +45,14 @@ namespace GLHF.Editor
                         GUILayout.Label($"Rtt Standard Dev: {runner.PingStandardDeviation() * 1000:F2}");
                         GUILayout.Label($"Timescale: {runner.Timescale():F2}");
                     }
+                    else
+                    {
+                        GUILayout.Label($"Client runner not running");
+                    }
                 }
                 else
                 {
-                    GUILayout.Label($"Runner not running");
+                    GUILayout.Label($"Players: {runner.PlayerCount}");
                 }
             }
         }

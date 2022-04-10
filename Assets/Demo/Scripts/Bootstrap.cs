@@ -56,7 +56,7 @@ namespace GLHF
                     else
                     {
                         runner.name = $"Client {i}";
-                        runner.Join(port, config, transport);
+                        runner.Join(port, "localhost", config, transport);
                     }
 
                     runners.Add(runner);
@@ -95,7 +95,7 @@ namespace GLHF
             BuildRunner(out Runner runner, out ITransport transport);
 
             runner.name = $"Client {runners.Count - 1}";
-            runner.Join(port, config, transport);
+            runner.Join(port, "localhost", config, transport);
 
             runners.Add(runner);
         }
