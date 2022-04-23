@@ -7,10 +7,13 @@ namespace GLHF
     [System.Serializable]
     public class JitterTimescale
     {
+        // TODO: Should prolly just make a simple stepped function class for this stuff.
         public float fastForwardTimescale = 1.05f;
         public float slowDownTimescale = 0.95f;
 
         public float errorThreshold = 0.025f;
+
+        public float stopThreshold = 0.1f;
 
         public float CalculateTimescale(float error)
         {
@@ -19,6 +22,10 @@ namespace GLHF
             if (error > errorThreshold)
             {
                 timescale = fastForwardTimescale;
+            }
+            else if (error < -stopThreshold)
+            {
+                timescale = 0.5f;
             }
             else if (error < -errorThreshold)
             {

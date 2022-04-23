@@ -14,9 +14,15 @@ namespace GLHF
         public int NewestTick => messages.Count > 0 ? messages[0].Tick : -1;
 
         private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
-        private readonly RollingStandardDeviation standardDeviation = new RollingStandardDeviation(100);
+        private readonly RollingStandardDeviation standardDeviation;
 
         private float timeLastMessageReceived;
+
+        // TODO: Should the buffer maintain deltatime? If the window is fixed based on it, probably.
+        public MessageBuffer(float deltaTime)
+        {
+            standardDeviation = new RollingStandardDeviation((int)(1 / deltaTime));
+        }
 
         public void Insert(ServerInputMessage message, float time)
         {

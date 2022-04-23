@@ -98,7 +98,7 @@ namespace GLHF
             transport.Connect(ip, port);
 
             unconsumedServerStates = new OrderedMessageBuffer();
-            pendingServerStates = new MessageBuffer();
+            pendingServerStates = new MessageBuffer(DeltaTime);
 
             this.transport = transport;
         }
@@ -426,7 +426,7 @@ namespace GLHF
                         if (PollInput)
                         {
                             ByteBuffer byteBuffer = new ByteBuffer();
-                            ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput);
+                            ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput, Tick);
                             clientInputMessage.Write(byteBuffer);
 
                             transport.SendToAll(byteBuffer.Data, DeliveryMethod.ReliableOrdered);
@@ -514,6 +514,13 @@ namespace GLHF
             Debug.Assert(Role == RunnerRole.Client);
 
             return pendingServerStates.TargetDelay();
+        }
+
+        public float CurrentBufferError()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
         }
 
         public int NextTick()
