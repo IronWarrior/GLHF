@@ -495,9 +495,21 @@ namespace GLHF
         {
             Debug.Assert(Role == RunnerRole.Client);
 
-            return 0;
+            return pendingServerStates.Size;
+        }
 
-            // return pendingInputsClientSide.CurrentSize;
+        public float MessageBufferDelay()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return pendingServerStates.CurrentDelay(DeltaTime, UnityEngine.Time.time, playbackTime);
+        }
+
+        public float TargetBufferDelay()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return pendingServerStates.TargetDelay();
         }
 
         public int NextTick()
@@ -512,33 +524,11 @@ namespace GLHF
             Debug.Assert(Role == RunnerRole.Client);
 
             return 0;
-
-            // return pendingInputsClientSide.Rtt;
-        }
-
-        public float PingStandardDeviation()
-        {
-            Debug.Assert(Role == RunnerRole.Client);
-
-            return 0;
-
-            // return pendingInputsClientSide.RttStandardDeviation;
-        }
-
-        public float TargetMessageBufferSize()
-        {
-            Debug.Assert(Role == RunnerRole.Client);
-
-            return 0;
-
-            // return config.JitterTimescale.TargetBufferSize(DeltaTime, pendingInputsClientSide.RttStandardDeviation);
         }
 
         public float Timescale()
         {
-            return 0;
-
-            //return config.JitterTimescale.CalculateTimescale(DeltaTime, pendingInputsClientSide.CurrentSize, pendingInputsClientSide.RttStandardDeviation);
+            return config.JitterTimescale.CalculateTimescale(pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime));
         }
         #endregion
     }

@@ -41,9 +41,9 @@ namespace GLHF.Editor
                         GUILayout.Label($"Tick: {runner.Tick}");
                         GUILayout.Label($"Message Next Tick: {runner.NextTick()}");
                         GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
-                        GUILayout.Label($"Stable Buffer Size: {runner.TargetMessageBufferSize()}");
+                        GUILayout.Label($"Current Delay: {runner.MessageBufferDelay()}");
+                        GUILayout.Label($"Target Delay: {runner.TargetBufferDelay()}");
                         GUILayout.Label($"Rtt: {runner.Ping() * 1000:F2}");
-                        GUILayout.Label($"Rtt Standard Dev: {runner.PingStandardDeviation() * 1000:F2}");
                         GUILayout.Label($"Timescale: {runner.Timescale():F2}");
                     }
                     else
