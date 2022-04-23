@@ -47,8 +47,11 @@ namespace GLHF
 
         private List<StateInput> currentInputs = new List<StateInput>();
 
+        // TODO: Things that are client or server specific should be encapsulated.
+        #region Client
         private OrderedMessageBuffer unconsumedServerStates;
         private MessageBuffer pendingServerStates;
+        #endregion
 
         private ITransport transport;
         private Config config;
@@ -92,7 +95,7 @@ namespace GLHF
             transport.OnReceive += Transport_OnReceive;
             transport.OnPeerConnected += Transport_OnPeerConnected;
             transport.OnPeerDisconnected += Transport_OnPeerDisconnected;
-            transport.Connect("localhost", port);
+            transport.Connect(ip, port);
 
             unconsumedServerStates = new OrderedMessageBuffer();
             pendingServerStates = new MessageBuffer();
@@ -177,6 +180,7 @@ namespace GLHF
                         OnComplete = () =>
                         {
                             Tick = tick;
+                            playbackTime = Tick * DeltaTime;
                             snapshot.Allocator.CopyFrom(state);
                             RebuildWorld();
                         };
@@ -401,9 +405,9 @@ namespace GLHF
                     }
 
                     float error = pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
-                    float scale = config.JitterTimescale.CalculateTimescale(error);
+                    float timescale = config.JitterTimescale.CalculateTimescale(error);
 
-                    playbackTime += UnityEngine.Time.deltaTime * scale;
+                    playbackTime += UnityEngine.Time.deltaTime * timescale;
 
                     while (pendingServerStates.TryPop(Tick, playbackTime, DeltaTime, out ServerInputMessage networkInput))
                     {

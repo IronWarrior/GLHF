@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a849e460f37c964489e467c118fd6c08, type: 3}
   m_Name: Config
   m_EditorClassIdentifier: 
-  TickRate: 20
+  TickRate: 120
   JitterTimescale:
-    timescaleMinimum: 0.8
-    timescaleMaximum: 1.2
+    fastForwardTimescale: 1.02
+    slowDownTimescale: 0.95
+    errorThreshold: 0.025
   Prefabs:
   - {fileID: -2162236619322153046, guid: 58406ba439be7ab418ed13a128703a46, type: 3}
   - {fileID: 3317265630580068342, guid: 6d802bc5f37823644b8f3266ba0ec687, type: 3}

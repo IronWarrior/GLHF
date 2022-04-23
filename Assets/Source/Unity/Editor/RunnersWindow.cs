@@ -94,7 +94,7 @@ namespace GLHF.Editor
             {
                 if (GUILayout.Button("Add Client"))
                 {
-                    bootstrap.AddClient();
+                    bootstrap.AddClient("localhost");
 
                     RefreshRunners();
                 }

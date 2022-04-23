@@ -28,7 +28,7 @@ namespace GLHF
 
         public float TargetDelay()
         {
-            return standardDeviation.Mean() + (standardDeviation.CalculateStandardDeviation() * 2.0f);
+            return standardDeviation.Mean() + (standardDeviation.CalculateStandardDeviation() * 3);
         }
 
         public float CurrentDelay(float deltaTime, float time, float playbackTime)
