@@ -2,38 +2,34 @@ namespace GLHF
 {
     /// <summary>
     /// Calculates a multiplier that can be applied to a delta time accumulator
-    /// to speed up or slow down the simulation based on how close the inputted current
-    /// tick buffer size is to the goal buffer size.
-    /// This is important since messages will not always arrive exactly delta time apart,
-    /// so it is necessary to sometimes catch up or slow down to keep a stable simulation.
+    /// to speed up or slow down the simulation based on some calculated error.
     /// </summary>
     [System.Serializable]
     public class JitterTimescale
     {
-        public float timescaleMinimum = 0.7f;
-        public float timescaleMaximum = 1.2f;
+        public float fastForwardTimescale = 1.05f;
+        public float slowDownTimescale = 0.95f;
 
-        public float CalculateTimescale(float deltaTime, int currentBufferSize, float rttStandardDeviation)
+        public float errorThreshold = 0.025f;
+
+        public float CalculateTimescale(float error)
         {
-            float targetBufferSize = TargetBufferSize(deltaTime, rttStandardDeviation);
+            float timescale;
 
-            if (targetBufferSize < 0.0001f)
+            if (error > errorThreshold)
             {
-                return 1;
+                timescale = fastForwardTimescale;
+            }
+            else if (error < -errorThreshold)
+            {
+                timescale = slowDownTimescale;
             }
             else
             {
-
-                float bufferPercent = currentBufferSize / targetBufferSize;
-                float timescale = UnityEngine.Mathf.Clamp(bufferPercent, timescaleMinimum, timescaleMaximum);
-
-                return timescale;
+                timescale = 1;
             }
-        }
 
-        public float TargetBufferSize(float deltaTime, float rttStandardDeviation)
-        {
-            return (float)System.Math.Round(rttStandardDeviation / deltaTime);
+            return timescale;
         }
     }
 }

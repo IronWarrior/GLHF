@@ -8,30 +8,40 @@ namespace GLHF
     /// </summary>
     public class MessageBuffer
     {
-        public int CurrentSize => messages.Count;
-        public float RttStandardDeviation => standardDeviation.CalculateStandardDeviation();
-        public int NextTick => messages.Count > 0 ? messages[messages.Count - 1].Tick : -1;
+        public int OldestTick => messages.Count > 0 ? messages[messages.Count - 1].Tick : -1;
+        public int NewestTick => messages.Count > 0 ? messages[0].Tick : -1;
 
         private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
-        private readonly RollingStandardDeviation standardDeviation = new RollingStandardDeviation(100);
+        private float timeLastMessageReceived;
 
-        public void Insert(ServerInputMessage message, float rtt)
+        public void Insert(ServerInputMessage message, float time)
         {
             messages.Insert(0, message);
-            messages.Sort(CompareMessages);            
 
-            standardDeviation.Insert(rtt);
+            timeLastMessageReceived = time;
         }
 
-        public bool TryPop(int tick, out ServerInputMessage message)
+        public float CalculateError(float deltaTime, float time, float playbackTime)
+        {
+            float targetDelay = deltaTime * 20;
+
+            float timeSinceLastSnapshotReceived = time - timeLastMessageReceived;
+            float actualDelay = NewestTick == -1 ? 0 : NewestTick * deltaTime - playbackTime + timeSinceLastSnapshotReceived;
+
+            float error = actualDelay - targetDelay;
+
+            return error;
+        }
+
+        public bool TryPop(int tick, float playbackTime, float deltaTime, out ServerInputMessage message)
         {
             if (messages.Count > 0)
             {
-                if (NextTick < tick)
+                if (OldestTick < tick)
                 {
-                    throw new System.Exception($"Requesting tick {tick}, indiciating message buffer's next tick {NextTick} has been skipped.");
+                    throw new System.Exception($"Requesting tick {tick}, indiciating message buffer's next tick {OldestTick} has been skipped.");
                 }
-                else if (NextTick == tick)
+                else if (OldestTick == tick && playbackTime >= tick * deltaTime)
                 {
                     message = messages[messages.Count - 1];
                     messages.RemoveAt(messages.Count - 1);
@@ -41,12 +51,7 @@ namespace GLHF
             }
 
             message = default;
-            return false;            
-        }
-
-        private int CompareMessages(ServerInputMessage a, ServerInputMessage b)
-        {
-            return b.Tick - a.Tick;
+            return false;
         }
     }
 }

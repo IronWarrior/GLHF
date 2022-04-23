@@ -47,7 +47,8 @@ namespace GLHF
 
         private List<StateInput> currentInputs = new List<StateInput>();
 
-        private MessageBuffer pendingInputsClientSide;
+        private OrderedMessageBuffer unconsumedServerStates;
+        private MessageBuffer pendingServerStates;
 
         private ITransport transport;
         private Config config;
@@ -93,7 +94,8 @@ namespace GLHF
             transport.OnPeerDisconnected += Transport_OnPeerDisconnected;
             transport.Connect("localhost", port);
 
-            pendingInputsClientSide = new MessageBuffer();
+            unconsumedServerStates = new OrderedMessageBuffer();
+            pendingServerStates = new MessageBuffer();
 
             this.transport = transport;
         }
@@ -185,7 +187,7 @@ namespace GLHF
                 else if (msgType == MessageType.Input)
                 {
                     ServerInputMessage message = new ServerInputMessage(buffer);
-                    pendingInputsClientSide.Insert(message, rtt);
+                    unconsumedServerStates.Insert(message);
                 }
             }
         }
@@ -350,6 +352,8 @@ namespace GLHF
             }
         }
 
+        private float playbackTime;
+
         private void Update()
         {
             // Check for incoming messages, firing any applicable events.
@@ -387,12 +391,22 @@ namespace GLHF
                 }
                 else
                 {
-                    deltaTimeAccumulated += UnityEngine.Time.deltaTime * config.JitterTimescale.CalculateTimescale(DeltaTime, pendingInputsClientSide.CurrentSize, pendingInputsClientSide.RttStandardDeviation);
+                    int nextTickToEnterBuffer = pendingServerStates.NewestTick != -1 ? pendingServerStates.NewestTick + 1 : Tick;
 
-                    while (deltaTimeAccumulated > DeltaTime && pendingInputsClientSide.TryPop(Tick, out ServerInputMessage networkInput))
+                    while (unconsumedServerStates.TryDequeue(nextTickToEnterBuffer, out ServerInputMessage message))
                     {
-                        deltaTimeAccumulated -= DeltaTime;
+                        pendingServerStates.Insert(message, UnityEngine.Time.time);
 
+                        nextTickToEnterBuffer++;
+                    }
+
+                    float error = pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
+                    float scale = config.JitterTimescale.CalculateTimescale(error);
+
+                    playbackTime += UnityEngine.Time.deltaTime * scale;
+
+                    while (pendingServerStates.TryPop(Tick, playbackTime, DeltaTime, out ServerInputMessage networkInput))
+                    {
                         Debug.Assert(networkInput.Tick == Tick, $"Attempting to use inputs from server tick {networkInput.Tick} while client is on tick {Tick}.");
 
                         currentInputs = networkInput.Inputs;
@@ -481,33 +495,50 @@ namespace GLHF
         {
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingInputsClientSide.CurrentSize;
+            return 0;
+
+            // return pendingInputsClientSide.CurrentSize;
         }
 
         public int NextTick()
         {
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingInputsClientSide.NextTick;
+            return pendingServerStates.OldestTick;
+        }
+
+        public float Ping()
+        {
+            Debug.Assert(Role == RunnerRole.Client);
+
+            return 0;
+
+            // return pendingInputsClientSide.Rtt;
         }
 
         public float PingStandardDeviation()
         {
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingInputsClientSide.RttStandardDeviation;
+            return 0;
+
+            // return pendingInputsClientSide.RttStandardDeviation;
         }
 
         public float TargetMessageBufferSize()
         {
             Debug.Assert(Role == RunnerRole.Client);
 
-            return config.JitterTimescale.TargetBufferSize(DeltaTime, pendingInputsClientSide.RttStandardDeviation);
+            return 0;
+
+            // return config.JitterTimescale.TargetBufferSize(DeltaTime, pendingInputsClientSide.RttStandardDeviation);
         }
 
         public float Timescale()
         {
-            return config.JitterTimescale.CalculateTimescale(DeltaTime, pendingInputsClientSide.CurrentSize, pendingInputsClientSide.RttStandardDeviation);
+            return 0;
+
+            //return config.JitterTimescale.CalculateTimescale(DeltaTime, pendingInputsClientSide.CurrentSize, pendingInputsClientSide.RttStandardDeviation);
         }
         #endregion
     }

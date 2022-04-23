@@ -23,7 +23,7 @@ public class RollingStandardDeviation
         index = (index + 1) % values.Length;
     }
 
-    public float CalculateStandardDeviation()
+    public float Mean()
     {
         if (count == 0)
             return 0;
@@ -36,6 +36,16 @@ public class RollingStandardDeviation
         }
 
         mean /= count;
+
+        return mean;
+    }
+
+    public float CalculateStandardDeviation()
+    {
+        if (count == 0)
+            return 0;
+
+        float mean = Mean();
 
         float sum = 0;
 
