@@ -6,22 +6,25 @@ namespace GLHF
     /// <summary>
     /// Messages sent from the server to the client.
     /// </summary>
-    public class ServerInputMessage
+    public class ServerInputMessage : ITickMessage
     {
         public readonly long Checksum;
-        public readonly int Tick;
+
+        public int Tick => tick;
+        private readonly int tick;
+
         public readonly List<StateInput> Inputs;
 
         public ServerInputMessage(List<StateInput> inputs, int tick, long checksum)
         {
             Inputs = inputs;
             Checksum = checksum;
-            Tick = tick;
+            this.tick = tick;
         }
 
         public ServerInputMessage(ByteBuffer buffer)
         {
-            Tick = buffer.Get<int>();
+            tick = buffer.Get<int>();
             Checksum = buffer.Get<long>();
             byte inputCount = buffer.Get<byte>();
 
@@ -38,7 +41,7 @@ namespace GLHF
         {
             buffer.Put((byte)MessageType.Input);
 
-            buffer.Put(Tick);
+            buffer.Put(tick);
             buffer.Put(Checksum);
             buffer.Put((byte)Inputs.Count);
 

@@ -5,27 +5,29 @@ namespace GLHF
     /// <summary>
     /// Messages sent from the client to the server.
     /// </summary>
-    public class ClientInputMessage
+    public class ClientInputMessage : ITickMessage
     {
         public readonly StateInput Input;
-        public readonly int Tick;
+
+        public int Tick => tick;
+        private readonly int tick;
 
         public ClientInputMessage(StateInput input, int tick)
         {
             Input = input;
-            Tick = tick;
+            this.tick = tick;
         }
 
         public ClientInputMessage(ByteBuffer buffer)
         {
-            Tick = buffer.Get<int>();
+            tick = buffer.Get<int>();
             Input = buffer.Get<StateInput>();
         }
 
         public void Write(ByteBuffer buffer)
         {
             buffer.Put((byte)MessageType.Input);
-            buffer.Put(Tick);
+            buffer.Put(tick);
             buffer.Put(Input);
         }
     }

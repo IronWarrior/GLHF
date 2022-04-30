@@ -47,10 +47,20 @@ namespace GLHF
 
         private List<StateInput> currentInputs = new List<StateInput>();
 
+        #region Server
+        private List<ClientInputBuffer> clientInputBuffers;
+
+        //private OrderedMessageBuffer<ClientInputMessage> unconsumedClientInputs;
+        //private MessageBuffer<ClientInputMessage> pendingClientInputs;
+        //private int nextClientInputToBeConsumed;
+        #endregion
+
         // TODO: Things that are client or server specific should be encapsulated.
         #region Client
-        private OrderedMessageBuffer unconsumedServerStates;
-        private MessageBuffer pendingServerStates;
+        private OrderedMessageBuffer<ServerInputMessage> unconsumedServerStates;
+        private MessageBuffer<ServerInputMessage> pendingServerStates;
+
+        private float playbackTime;
         #endregion
 
         private ITransport transport;
@@ -73,6 +83,10 @@ namespace GLHF
             transport.Listen(port);
 
             this.transport = transport;
+
+            clientInputBuffers = new List<ClientInputBuffer>();
+            //unconsumedClientInputs = new OrderedMessageBuffer<ClientInputMessage>();
+            //pendingClientInputs = new MessageBuffer<ClientInputMessage>(DeltaTime);
 
             currentInputs.Add(new StateInput());
             PlayerCount++;
@@ -97,8 +111,8 @@ namespace GLHF
             transport.OnPeerDisconnected += Transport_OnPeerDisconnected;
             transport.Connect(ip, port);
 
-            unconsumedServerStates = new OrderedMessageBuffer();
-            pendingServerStates = new MessageBuffer(DeltaTime);
+            unconsumedServerStates = new OrderedMessageBuffer<ServerInputMessage>();
+            pendingServerStates = new MessageBuffer<ServerInputMessage>(DeltaTime);
 
             this.transport = transport;
         }
@@ -117,6 +131,7 @@ namespace GLHF
         {
             if (Role == RunnerRole.Host)
             {
+                clientInputBuffers.Add(new ClientInputBuffer());
                 currentInputs.Add(new StateInput());
                 PlayerCount++;
 
@@ -158,7 +173,8 @@ namespace GLHF
                 Debug.Assert(msgType == MessageType.Input);
 
                 ClientInputMessage message = new ClientInputMessage(buffer);
-                currentInputs[id + 1] = message.Input;
+
+                clientInputBuffers[id].Insert(message);
             }
             else
             {
@@ -231,7 +247,7 @@ namespace GLHF
         #endregion
 
         #region Simulation Public Methods
-        public StateObject Spawn(int id)
+        private StateObject Spawn(int id)
         {
             var prefab = config.PrefabTable[id];
             var spawned = Instantiate(prefab);
@@ -356,8 +372,6 @@ namespace GLHF
             }
         }
 
-        private float playbackTime;
-
         private void Update()
         {
             // Check for incoming messages, firing any applicable events.
@@ -379,6 +393,11 @@ namespace GLHF
                         deltaTimeAccumulated -= DeltaTime;
 
                         currentInputs[0] = polledInput;
+                        
+                        if (clientInputBuffers[0].TryPop(out ClientInputMessage inputMessage))
+                        {
+                            currentInputs[1] = inputMessage.Input;
+                        }
 
                         TickUpdate();
 
@@ -409,19 +428,17 @@ namespace GLHF
 
                     playbackTime += UnityEngine.Time.deltaTime * timescale;
 
-                    while (pendingServerStates.TryPop(Tick, playbackTime, DeltaTime, out ServerInputMessage networkInput))
+                    while (pendingServerStates.TryPop(Tick, playbackTime, DeltaTime, out ServerInputMessage serverInputMessage))
                     {
-                        Debug.Assert(networkInput.Tick == Tick, $"Attempting to use inputs from server tick {networkInput.Tick} while client is on tick {Tick}.");
+                        Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
-                        currentInputs = networkInput.Inputs;
+                        currentInputs = serverInputMessage.Inputs;
 
                         TickUpdate();
 
                         long checksum = snapshot.Allocator.Checksum();
 
-                        Debug.Assert(checksum == networkInput.Checksum, "Checksums not equal.");
-
-                        Tick++;
+                        Debug.Assert(checksum == serverInputMessage.Checksum, "Checksums not equal.");                        
 
                         if (PollInput)
                         {
@@ -429,8 +446,10 @@ namespace GLHF
                             ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput, Tick);
                             clientInputMessage.Write(byteBuffer);
 
-                            transport.SendToAll(byteBuffer.Data, DeliveryMethod.ReliableOrdered);
+                            transport.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
                         }
+
+                        Tick++;
                     }
                 }
 
@@ -540,6 +559,13 @@ namespace GLHF
         public float Timescale()
         {
             return config.JitterTimescale.CalculateTimescale(pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime));
+        }
+
+        public int ClientInputBufferCount()
+        {
+            Debug.Assert(Role == RunnerRole.Host);
+
+            return clientInputBuffers[0].Size;
         }
         #endregion
     }

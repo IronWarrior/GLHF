@@ -2,21 +2,21 @@ using System.Collections.Generic;
 
 namespace GLHF
 {
-    public class OrderedMessageBuffer
+    public class OrderedMessageBuffer<T> where T : ITickMessage
     {
-        private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
+        private readonly List<T> messages = new List<T>();
 
-        public void Insert(ServerInputMessage message)
+        public void Insert(T message)
         {
             messages.Add(message);
             messages.Sort(CompareMessages);
         }
 
-        public bool TryDequeue(int targetTick, out ServerInputMessage message)
+        public bool TryDequeue(int targetTick, out T message)
         {
             if (messages.Count > 0)
             {
-                ServerInputMessage oldest = messages[messages.Count - 1];
+                T oldest = messages[messages.Count - 1];
 
                 if (oldest.Tick == targetTick)
                 {
@@ -31,7 +31,7 @@ namespace GLHF
             return false;
         }
 
-        private int CompareMessages(ServerInputMessage a, ServerInputMessage b)
+        private int CompareMessages(T a, T b)
         {
             return b.Tick - a.Tick;
         }

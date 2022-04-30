@@ -2,18 +2,18 @@ using System.Collections.Generic;
 
 namespace GLHF
 {
-    // TODO: Should abstract ServerInputMessage to just be a message about a specific tick.
     /// <summary>
     /// Messages inserted into the buffer are sorted by tick.
     /// </summary>
-    public class MessageBuffer
+    public class MessageBuffer<T> where T : ITickMessage
     {
         public int Size => messages.Count;
 
+        // TODO: Not a fan of signaling with negatives.
         public int OldestTick => messages.Count > 0 ? messages[messages.Count - 1].Tick : -1;
         public int NewestTick => messages.Count > 0 ? messages[0].Tick : -1;
 
-        private readonly List<ServerInputMessage> messages = new List<ServerInputMessage>();
+        private readonly List<T> messages = new List<T>();
         private readonly RollingStandardDeviation standardDeviation;
 
         private float timeLastMessageReceived;
@@ -24,7 +24,7 @@ namespace GLHF
             standardDeviation = new RollingStandardDeviation((int)(1 / deltaTime));
         }
 
-        public void Insert(ServerInputMessage message, float time)
+        public void Insert(T message, float time)
         {
             messages.Insert(0, message);
             standardDeviation.Insert(time - timeLastMessageReceived);
@@ -53,7 +53,21 @@ namespace GLHF
             return error;
         }
 
-        public bool TryPop(int tick, float playbackTime, float deltaTime, out ServerInputMessage message)
+        public bool TryPop(out T message)
+        {
+            if (messages.Count > 0)
+            {
+                message = messages[messages.Count - 1];
+                messages.RemoveAt(messages.Count - 1);
+
+                return true;
+            }
+
+            message = default;
+            return false;
+        }
+
+        public bool TryPop(int tick, float playbackTime, float deltaTime, out T message)
         {
             if (messages.Count > 0)
             {

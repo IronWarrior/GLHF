@@ -55,6 +55,11 @@ namespace GLHF.Editor
                 else
                 {
                     GUILayout.Label($"Players: {runner.PlayerCount}");
+
+                    if (runner.Running)
+                    {
+                        GUILayout.Label($"Client Input Buffer Count: {runner.ClientInputBufferCount()}");
+                    }
                 }
             }
         }

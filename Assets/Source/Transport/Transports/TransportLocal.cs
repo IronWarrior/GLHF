@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace GLHF.Transport
-{   
+{
     /// <summary>
     /// Dummy transport to spoof connections within a single instance of the app.
     /// </summary>
@@ -31,9 +31,20 @@ namespace GLHF.Transport
             public int SendSequenceNumber;
         }
 
-        private readonly Channel reliableChannel = new Channel();
-        private readonly Channel reliableOrderedChannel = new Channel();
-        private readonly Dictionary<int, TransportLocal> peers = new Dictionary<int, TransportLocal>();
+        private class Peer
+        {
+            public readonly TransportLocal Transport;
+
+            public readonly Channel ReliableChannel = new Channel();
+            public readonly Channel ReliableOrderedChannel = new Channel();
+
+            public Peer(TransportLocal transport)
+            {
+                Transport = transport;
+            }
+        }
+
+        private readonly Dictionary<int, Peer> peers = new Dictionary<int, Peer>();
 
         private static TransportLocal listeningTransport;
 
@@ -66,8 +77,11 @@ namespace GLHF.Transport
 
         public void Update()
         {
-            ProcessChannel(reliableOrderedChannel, true);
-            ProcessChannel(reliableChannel, false);
+            foreach (var peer in peers.Values)
+            {
+                ProcessChannel(peer.ReliableOrderedChannel, true);
+                ProcessChannel(peer.ReliableChannel, false);
+            }
 
             // Send packets with simulated latency.
             for (int i = 0; i < pendingSendPackets.Count; i++)
@@ -90,7 +104,7 @@ namespace GLHF.Transport
 
             foreach (var peer in peers.Values)
             {
-                peer.OnPeerDisconnectedInternal(this);
+                peer.Transport.OnPeerDisconnectedInternal(this);
             }
 
             peers.Clear();
@@ -103,13 +117,14 @@ namespace GLHF.Transport
 
         public void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod)
         {
-            TransportLocal peer = peers[peerId];
+            Peer peer = peers[peerId];
+            TransportLocal transport = peer.Transport;
 
-            Channel channel = deliveryMethod == DeliveryMethod.ReliableOrdered ? reliableOrderedChannel : reliableChannel;
+            Channel channel = deliveryMethod == DeliveryMethod.ReliableOrdered ? peer.ReliableOrderedChannel : peer.ReliableChannel;
 
             Packet packet = new Packet()
             {
-                SendingPeerID = peer.ID,
+                SendingPeerID = transport.ID,
                 Data = data,
                 SequenceNumber = channel.SendSequenceNumber,
                 SendTime = Time.time,
@@ -119,7 +134,7 @@ namespace GLHF.Transport
             channel.SendSequenceNumber++;
 
             if (simulatedLatency.Equals(default(SimulatedLatency)))
-                peer.ReceiveInternal(packet);
+                transport.ReceiveInternal(packet);
             else
             {
                 float latency = UnityEngine.Random.Range(simulatedLatency.MinDelay, simulatedLatency.MaxDelay) / 1000f;
@@ -128,7 +143,7 @@ namespace GLHF.Transport
                 {
                     Packet = packet,
                     Latency = latency,
-                    TargetPeer = peer
+                    TargetPeer = transport
                 };
 
                 pendingSendPackets.Add(latencyPacket);
@@ -176,7 +191,7 @@ namespace GLHF.Transport
 
         private void OnPeerConnectedInternal(TransportLocal peer)
         {
-            peers.Add(peer.ID, peer);
+            peers.Add(peer.ID, new Peer(peer));
 
             OnPeerConnected?.Invoke(peer.ID);
         }
@@ -190,14 +205,17 @@ namespace GLHF.Transport
 
         private void ReceiveInternal(Packet packet)
         {
-            if (packet.DeliveryMethod == DeliveryMethod.ReliableOrdered)
+            foreach (var peer in peers.Values)
             {
-                reliableOrderedChannel.PendingReceived.Insert(0, packet);
-                reliableOrderedChannel.PendingReceived.Sort(ComparePackets);
-            }
-            else
-            {
-                reliableChannel.PendingReceived.Insert(0, packet);
+                if (packet.DeliveryMethod == DeliveryMethod.ReliableOrdered)
+                {
+                    peer.ReliableOrderedChannel.PendingReceived.Insert(0, packet);
+                    peer.ReliableOrderedChannel.PendingReceived.Sort(ComparePackets);
+                }
+                else
+                {
+                    peer.ReliableChannel.PendingReceived.Insert(0, packet);
+                }
             }
         }
 
