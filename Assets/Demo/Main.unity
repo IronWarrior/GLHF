@@ -222,7 +222,7 @@ MonoBehaviour:
   clients: 3
   port: 7778
   useLocalTransport: 1
-  useSimulatedLatency: 0
+  useSimulatedLatency: 1
   minLatencyMilliseconds: 0
   maxLatencyMilliseconds: 500
 --- !u!4 &230635089

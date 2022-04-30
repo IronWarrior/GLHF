@@ -59,6 +59,11 @@ namespace GLHF.Transport
 
         private SimulatedLatency simulatedLatency;
 
+        public override string ToString()
+        {
+            return $"{(this == listeningTransport ? "Server" : "Client")} {ID}";
+        }
+
         public void Listen(int _)
         {
             if (listeningTransport != null)
@@ -124,7 +129,7 @@ namespace GLHF.Transport
 
             Packet packet = new Packet()
             {
-                SendingPeerID = transport.ID,
+                SendingPeerID = ID,
                 Data = data,
                 SequenceNumber = channel.SendSequenceNumber,
                 SendTime = Time.time,
@@ -205,17 +210,16 @@ namespace GLHF.Transport
 
         private void ReceiveInternal(Packet packet)
         {
-            foreach (var peer in peers.Values)
+            Peer peer = peers[packet.SendingPeerID];
+
+            if (packet.DeliveryMethod == DeliveryMethod.ReliableOrdered)
             {
-                if (packet.DeliveryMethod == DeliveryMethod.ReliableOrdered)
-                {
-                    peer.ReliableOrderedChannel.PendingReceived.Insert(0, packet);
-                    peer.ReliableOrderedChannel.PendingReceived.Sort(ComparePackets);
-                }
-                else
-                {
-                    peer.ReliableChannel.PendingReceived.Insert(0, packet);
-                }
+                peer.ReliableOrderedChannel.PendingReceived.Insert(0, packet);
+                peer.ReliableOrderedChannel.PendingReceived.Sort(ComparePackets);
+            }
+            else
+            {
+                peer.ReliableChannel.PendingReceived.Insert(0, packet);
             }
         }
 

@@ -393,10 +393,13 @@ namespace GLHF
                         deltaTimeAccumulated -= DeltaTime;
 
                         currentInputs[0] = polledInput;
-                        
-                        if (clientInputBuffers[0].TryPop(out ClientInputMessage inputMessage))
+
+                        for (int i = 0; i < clientInputBuffers.Count; i++)
                         {
-                            currentInputs[1] = inputMessage.Input;
+                            if (clientInputBuffers[i].TryPop(out ClientInputMessage inputMessage))
+                            {
+                                currentInputs[i + 1] = inputMessage.Input;
+                            }
                         }
 
                         TickUpdate();
@@ -438,7 +441,7 @@ namespace GLHF
 
                         long checksum = snapshot.Allocator.Checksum();
 
-                        Debug.Assert(checksum == serverInputMessage.Checksum, "Checksums not equal.");                        
+                        Debug.Assert(checksum == serverInputMessage.Checksum, "Checksums not equal.");
 
                         if (PollInput)
                         {
