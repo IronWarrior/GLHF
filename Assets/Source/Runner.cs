@@ -49,10 +49,6 @@ namespace GLHF
 
         #region Server
         private List<ClientInputBuffer> clientInputBuffers;
-
-        //private OrderedMessageBuffer<ClientInputMessage> unconsumedClientInputs;
-        //private MessageBuffer<ClientInputMessage> pendingClientInputs;
-        //private int nextClientInputToBeConsumed;
         #endregion
 
         // TODO: Things that are client or server specific should be encapsulated.
@@ -85,8 +81,6 @@ namespace GLHF
             this.transport = transport;
 
             clientInputBuffers = new List<ClientInputBuffer>();
-            //unconsumedClientInputs = new OrderedMessageBuffer<ClientInputMessage>();
-            //pendingClientInputs = new MessageBuffer<ClientInputMessage>(DeltaTime);
 
             currentInputs.Add(new StateInput());
             PlayerCount++;
