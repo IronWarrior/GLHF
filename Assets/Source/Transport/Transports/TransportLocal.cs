@@ -190,14 +190,15 @@ namespace GLHF.Transport
             // TODO: Decide reject/accept here.
             client.ID = peers.Count;
 
+            client.peers.Add(ID, new Peer(this));
+            peers.Add(client.ID, new Peer(client));
+
             OnPeerConnectedInternal(client);
             client.OnPeerConnectedInternal(this);
         }
 
         private void OnPeerConnectedInternal(TransportLocal peer)
         {
-            peers.Add(peer.ID, new Peer(peer));
-
             OnPeerConnected?.Invoke(peer.ID);
         }
 

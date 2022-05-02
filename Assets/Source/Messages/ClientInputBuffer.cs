@@ -10,6 +10,16 @@ namespace GLHF
 
         private int nextTickToBeConsumed;
 
+        public ClientInputBuffer()
+        {
+
+        }
+
+        public ClientInputBuffer(int firstTickToBeConsumed)
+        {
+            nextTickToBeConsumed = firstTickToBeConsumed;
+        }
+
         public void Insert(ClientInputMessage message)
         {
             unconsumed.Insert(message);

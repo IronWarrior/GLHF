@@ -125,7 +125,7 @@ namespace GLHF
         {
             if (Role == RunnerRole.Host)
             {
-                clientInputBuffers.Add(new ClientInputBuffer());
+                clientInputBuffers.Add(new ClientInputBuffer(Running ? Tick : 0));
                 currentInputs.Add(new StateInput());
                 PlayerCount++;
 
@@ -145,6 +145,7 @@ namespace GLHF
                     buffer.Put(data);
 
                     transport.Send(peerId, buffer.Data, DeliveryMethod.Reliable);
+
                 }
             }
 
