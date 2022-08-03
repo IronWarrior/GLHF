@@ -46,6 +46,7 @@ namespace GLHF
         public Allocator confirmedState;
 
         private List<StateInput> currentInputs = new List<StateInput>();
+        private int playerJoinEvents = 0;
 
         #region Server
         private List<ClientInputBuffer> clientInputBuffers;
@@ -82,8 +83,10 @@ namespace GLHF
 
             clientInputBuffers = new List<ClientInputBuffer>();
 
-            currentInputs.Add(new StateInput());
+            currentInputs.Add(default);
             PlayerCount++;
+
+            playerJoinEvents++;
 
             Connected = true;
         }
@@ -126,8 +129,10 @@ namespace GLHF
             if (Role == RunnerRole.Host)
             {
                 clientInputBuffers.Add(new ClientInputBuffer(Running ? Tick : 0));
-                currentInputs.Add(new StateInput());
+                currentInputs.Add(default);
                 PlayerCount++;
+
+                playerJoinEvents++;
 
                 if (Running)
                 {
@@ -145,7 +150,6 @@ namespace GLHF
                     buffer.Put(data);
 
                     transport.Send(peerId, buffer.Data, DeliveryMethod.Reliable);
-
                 }
             }
 
@@ -219,6 +223,8 @@ namespace GLHF
 
             transport.SendToAll(buffer.Data, DeliveryMethod.ReliableOrdered);
 
+            playerJoinEvents = PlayerCount;
+
             LoadSceneAndStartGame(0, null);
         }
 
@@ -288,7 +294,7 @@ namespace GLHF
             if (index < currentInputs.Count)
                 return currentInputs[index];
             else
-                return new StateInput();
+                return default;
         }
 
         public void SetState(Allocator source)
@@ -298,7 +304,7 @@ namespace GLHF
             RebuildWorld();
         }
 
-        public new T FindObjectOfType<T>() where T : Component
+        public new T FindObjectOfType<T>() where T : class
         {
             GameObject[] roots = Scene.GetRootGameObjects();
 
@@ -315,7 +321,7 @@ namespace GLHF
             return null;
         }
 
-        public new T[] FindObjectsOfType<T>() where T : Component
+        public new T[] FindObjectsOfType<T>() where T : class
         {
             List<T> results = new List<T>();
 
@@ -391,21 +397,25 @@ namespace GLHF
 
                         for (int i = 0; i < clientInputBuffers.Count; i++)
                         {
-                            if (clientInputBuffers[i].TryPop(out ClientInputMessage inputMessage))
+                            while (clientInputBuffers[i].TryPop(out ClientInputMessage inputMessage))
                             {
                                 currentInputs[i + 1] = inputMessage.Input;
                             }
                         }
+
+                        TickEvents();
 
                         TickUpdate();
 
                         long checksum = snapshot.Allocator.Checksum();
 
                         ByteBuffer byteBuffer = new ByteBuffer();
-                        ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum);
+                        ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum, playerJoinEvents);
                         serverInputMessage.Write(byteBuffer);
 
                         transport.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+
+                        playerJoinEvents = 0;
 
                         Tick++;
                     }
@@ -431,6 +441,10 @@ namespace GLHF
                         Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
                         currentInputs = serverInputMessage.Inputs;
+
+                        playerJoinEvents = serverInputMessage.NewPlayersJoining;
+
+                        TickEvents();
 
                         TickUpdate();
 
@@ -481,6 +495,24 @@ namespace GLHF
             foreach (var so in stateObjects)
             {
                 so.RenderStart();
+            }
+        }
+
+        // TODO: Right now, the only event is new players joining. Extend to
+        // allow for generic gameplay events.
+        private void TickEvents()
+        {
+            if (playerJoinEvents > 0)
+            {
+                var joineds = FindObjectsOfType<IPlayerJoined>();
+
+                for (int i = 0; i < playerJoinEvents; i++)
+                {                   
+                    foreach (var joined in joineds)
+                    {
+                        joined.PlayerJoined();
+                    }
+                }
             }
         }
 

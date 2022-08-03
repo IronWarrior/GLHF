@@ -1,19 +1,16 @@
 using GLHF;
 using UnityEngine;
 
-public class PlayerSpawner : StateBehaviour
+public class PlayerSpawner : TickBehaviour, IPlayerJoined
 {
     [SerializeField]
     PlayerPhysics playerPrefab;
 
-    public override int Size => 0;
-
-    public override void TickStart()
+    public void PlayerJoined()
     {
-        for (int i = 0; i < Runner.PlayerCount; i++)
-        {
-            var player = Runner.Spawn(playerPrefab, new Vector3(i * 2, 0, 0));
-            player.SetPlayerIndex(i);
-        }
+        int index = Runner.FindObjectsOfType<PlayerPhysics>().Length;
+
+        var player = Runner.Spawn(playerPrefab, new Vector3(index * 2, 0, 0));
+        player.SetPlayerIndex(index);
     }
 }

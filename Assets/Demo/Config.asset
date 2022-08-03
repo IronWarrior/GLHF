@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   TickRate: 20
   JitterTimescale:
-    fastForwardTimescale: 1.02
+    fastForwardTimescale: 1.2
     slowDownTimescale: 0.98
     errorThreshold: 0.025
     stopThreshold: 0.4

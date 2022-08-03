@@ -24,7 +24,8 @@ namespace GLHF.Transport
         void SendToAll(byte[] data, DeliveryMethod deliveryMethod);
         void SetSimulatedLatency(SimulatedLatency simulatedLatency);
     }
-
+    
+    // TODO: Pull this out, wrap ITransports in TransportControllers that spoof the latency?
     public struct SimulatedLatency
     {
         public int MinDelay, MaxDelay;

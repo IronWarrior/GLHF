@@ -15,11 +15,15 @@ namespace GLHF
 
         public readonly List<StateInput> Inputs;
 
-        public ServerInputMessage(List<StateInput> inputs, int tick, long checksum)
+        public readonly int NewPlayersJoining;
+
+        public ServerInputMessage(List<StateInput> inputs, int tick, long checksum, int newPlayersJoining)
         {
             Inputs = inputs;
             Checksum = checksum;
             this.tick = tick;
+
+            NewPlayersJoining = newPlayersJoining;
         }
 
         public ServerInputMessage(ByteBuffer buffer)
@@ -35,6 +39,8 @@ namespace GLHF
                 StateInput input = buffer.Get<StateInput>();
                 Inputs.Add(input);
             }
+
+            NewPlayersJoining = buffer.Get<int>();
         }
 
         public void Write(ByteBuffer buffer)
@@ -49,6 +55,8 @@ namespace GLHF
             {
                 buffer.Put(Inputs[i]);
             }
+
+            buffer.Put(NewPlayersJoining);
         }
     }
 }
