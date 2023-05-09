@@ -40,7 +40,7 @@ namespace GLHF
 
         private float deltaTimeAccumulated;
 
-        private LinkedList<StateObject> stateObjects;
+        private GameObjectWorld gameObjectWorld;
 
         public Snapshot snapshot;
         public Allocator confirmedState;
@@ -193,7 +193,7 @@ namespace GLHF
                             Tick = tick;
                             playbackTime = Tick * DeltaTime;
                             snapshot.Allocator.CopyFrom(state);
-                            RebuildWorld();
+                            gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
                         };
                     }
 
@@ -242,132 +242,6 @@ namespace GLHF
             OnComplete?.Invoke();
         }
         #endregion
-
-        #region Simulation Public Methods
-        private StateObject Spawn(int id)
-        {
-            var prefab = config.PrefabTable[id];
-            var spawned = Instantiate(prefab);
-
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(spawned.gameObject, Scene);
-
-            stateObjects.AddFirst(spawned);
-
-            return spawned;
-        }
-
-        public T Spawn<T>(T prefab, Vector3 position) where T : TickBehaviour
-        {
-            var spawned = Instantiate(prefab);
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(spawned.gameObject, Scene);
-
-            var ptr = snapshot.Allocator.Allocate(spawned.Object.Size);
-            spawned.Object.Initialize(this, ptr);
-
-            stateObjects.AddFirst(spawned.Object);
-
-            if (spawned.TryGetComponent<StateTransform>(out var t))
-            {
-                t.Position = position;
-            }
-
-            spawned.Object.TickStart();
-            spawned.Object.RenderStart();
-
-            return spawned;
-        }
-
-        public void Despawn(StateObject so)
-        {
-            snapshot.Allocator.Release(so.Ptr);
-
-            stateObjects.Remove(so);
-            Destroy(so.gameObject);
-        }
-
-        public StateInput GetInput(int index)
-        {
-            if (index < currentInputs.Count)
-                return currentInputs[index];
-            else
-                return default;
-        }
-
-        public void SetState(Allocator source)
-        {
-            snapshot.Allocator.CopyFrom(source);
-
-            RebuildWorld();
-        }
-
-        public new T FindObjectOfType<T>() where T : class
-        {
-            GameObject[] roots = Scene.GetRootGameObjects();
-
-            foreach (var root in roots)
-            {
-                var result = root.GetComponentInChildren<T>();
-
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
-            return null;
-        }
-
-        public new T[] FindObjectsOfType<T>() where T : class
-        {
-            List<T> results = new List<T>();
-
-            GameObject[] roots = Scene.GetRootGameObjects();
-
-            foreach (var root in roots)
-            {
-                results.AddRange(root.GetComponentsInChildren<T>());
-            }
-
-            return results.ToArray();
-        }
-        #endregion
-
-        /// <summary>
-        /// Rebuilds the game object and monobehaviour representing of the world in the
-        /// current snapshot.
-        /// </summary>
-        private void RebuildWorld()
-        {
-            LinkedListNode<StateObject> node = stateObjects.First;
-
-            while (node != null)
-            {
-                var next = node.Next;
-
-                if (!node.Value.IsSceneObject)
-                {
-                    stateObjects.Remove(node);
-
-                    Destroy(node.Value.gameObject);
-                }
-
-                node = next;
-            }
-
-            Allocator.Block* current = null;
-
-            while (snapshot.NextStateObject(current, out var next, out byte* ptr, out int prefabId))
-            {
-                if (prefabId != -1)
-                {
-                    var spawned = Spawn(prefabId);
-                    spawned.Initialize(this, ptr);
-                    spawned.RenderStart();
-                }
-
-                current = next;
-            }
-        }
 
         private void Update()
         {
@@ -461,7 +335,7 @@ namespace GLHF
                     }
                 }
 
-                foreach (var so in stateObjects)
+                foreach (var so in gameObjectWorld.StateObjects)
                 {
                     so.Render();
                 }
@@ -475,20 +349,20 @@ namespace GLHF
             var allocator = new Allocator(1024);
             snapshot = new Snapshot(allocator);
 
-            stateObjects = new LinkedList<StateObject>(FindObjectsOfType<StateObject>());
-
-            foreach (var stateObject in stateObjects)
-            {
-                var ptr = snapshot.Allocator.Allocate(stateObject.Size);
-                stateObject.Initialize(this, ptr);
-            }
+            gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
+            gameObjectWorld.BuildFromStateObjects(FindObjectsOfType<StateObject>());
 
             if (Role == RunnerRole.Client)
             {
                 confirmedState = new Allocator(snapshot.Allocator);
             }
 
-            foreach (var so in stateObjects)
+            foreach (var so in gameObjectWorld.StateObjects)
+            {
+                so.SetRunner(this);
+            }
+
+            foreach (var so in gameObjectWorld.StateObjects)
             {
                 so.RenderStart();
             }
@@ -516,28 +390,95 @@ namespace GLHF
         {
             if (Tick == 0)
             {
-                LinkedListNode<StateObject> startNode = stateObjects.First;
-
-                while (startNode != null)
+                foreach (var so in gameObjectWorld.StateObjects)
                 {
-                    if (startNode.Value.IsSceneObject)
+                    if (so.IsSceneObject)
                     {
-                        startNode.Value.TickStart();
+                        so.TickStart();
                     }
-
-                    startNode = startNode.Next;
                 }
             }
 
-            LinkedListNode<StateObject> node = stateObjects.First;
-
-            while (node != null)
+            foreach (var so in gameObjectWorld.StateObjects)
             {
-                node.Value.TickUpdate();
-
-                node = node.Next;
+                if (so.IsSceneObject)
+                {
+                    so.TickUpdate();
+                }
             }
         }
+
+        #region Simulation Public Methods
+        public T Spawn<T>(T prefab, Vector3 position) where T : TickBehaviour
+        {
+            var spawned = gameObjectWorld.Spawn(prefab, Scene);
+
+            spawned.Object.SetRunner(this);
+
+            if (spawned.TryGetComponent<StateTransform>(out var t))
+            {
+                t.Position = position;
+            }
+
+            spawned.Object.TickStart();
+            spawned.Object.RenderStart();
+
+            return spawned;
+        }
+
+        public void Despawn(StateObject so)
+        {
+            so.TickDestroy();
+
+            gameObjectWorld.Despawn(so);
+        }
+
+        public StateInput GetInput(int index)
+        {
+            if (index < currentInputs.Count)
+                return currentInputs[index];
+            else
+                return default;
+        }
+
+        public void SetState(Allocator source)
+        {
+            snapshot.Allocator.CopyFrom(source);
+
+            gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
+        }
+
+        public new T FindObjectOfType<T>() where T : class
+        {
+            GameObject[] roots = Scene.GetRootGameObjects();
+
+            foreach (var root in roots)
+            {
+                var result = root.GetComponentInChildren<T>();
+
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            return null;
+        }
+
+        public new T[] FindObjectsOfType<T>() where T : class
+        {
+            List<T> results = new List<T>();
+
+            GameObject[] roots = Scene.GetRootGameObjects();
+
+            foreach (var root in roots)
+            {
+                results.AddRange(root.GetComponentsInChildren<T>());
+            }
+
+            return results.ToArray();
+        }
+        #endregion
 
         #region Debug
         public int MessageBufferCount()

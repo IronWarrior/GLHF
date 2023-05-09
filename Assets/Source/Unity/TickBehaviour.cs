@@ -9,6 +9,7 @@ namespace GLHF
 
         public virtual void TickStart() { }
         public virtual void TickUpdate() { }
+        public virtual void TickDestroy() { }
         public virtual void RenderStart() { }
         public virtual void Render() { }
     }

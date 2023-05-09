@@ -37,6 +37,8 @@ namespace GLHF
 
             Size = sizeof(int) + sizeof(int);
 
+            Object = this;
+
             foreach (var sb in stateBehaviours)
             {
                 Size += sb.Size;
@@ -48,16 +50,12 @@ namespace GLHF
             }
         }
 
-        public void Initialize(Runner runner, byte* ptr)
+        public void SetRunner(Runner runner)
         {
             foreach (var tb in tickBehaviours)
             {
                 tb.Runner = runner;
             }
-
-            SetPointer(ptr);
-
-            PrefabId = BakedPrefabId;
         }
 
         public override void TickStart()
@@ -95,6 +93,8 @@ namespace GLHF
         public void SetPointer(byte* ptr)
         {
             Ptr = ptr;
+
+            PrefabId = BakedPrefabId;
 
             int offset = sizeof(int) + sizeof(int);
 

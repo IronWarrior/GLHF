@@ -6,7 +6,7 @@ namespace GLHF.Tests
     public class Tests
     {
         [Test]
-        public void TestTransportLocalCanSendAndReceiveData()
+        public void TransportLocal_CanSendAndReceiveData()
         {
             TransportLocal server = new TransportLocal();
             TransportLocal client = new TransportLocal();                
@@ -23,6 +23,38 @@ namespace GLHF.Tests
             client.Poll();
 
             Assert.AreEqual(testData, receivedData);
+        }
+
+        [Test]
+        public void Mean_ReturnsZeroWhenNoValuesInserted()
+        {
+            RollingStandardDeviation rsd = new RollingStandardDeviation(3);
+
+            rsd.Insert(0);
+            rsd.Insert(0);
+            rsd.Insert(0);
+
+            rsd.Insert(2.0f);
+            rsd.Insert(4.0f);
+            rsd.Insert(6.0f);
+
+            Assert.AreEqual(4, rsd.Mean(), 0.001f);
+        }
+
+        [Test]
+        public void CalculateStandardDeviation_CalculatesCorrectly()
+        {
+            RollingStandardDeviation rsd = new RollingStandardDeviation(3);
+
+            rsd.Insert(0);
+            rsd.Insert(0);
+            rsd.Insert(0);
+            
+            rsd.Insert(2.0f);
+            rsd.Insert(4.0f);
+            rsd.Insert(6.0f);
+
+            Assert.AreEqual(1.632f, rsd.CalculateStandardDeviation(), 0.001f);
         }
     }
 }

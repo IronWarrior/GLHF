@@ -6,16 +6,10 @@ public unsafe class PlayerPhysics : StateBehaviour
     [SerializeField]
     float speed = 1;
 
-    public bool IsRed
-    {
-        get => *(bool*)Ptr;
-        set => *(bool*)Ptr = value;
-    }
-
     public int Player
     {
-        get => *(int*)(Ptr + 1);
-        set => *(int*)(Ptr + 1) = value;
+        get => *(int*)Ptr;
+        set => *(int*)Ptr = value;
     }
 
     public override int Size => sizeof(bool) + sizeof(int);
@@ -43,11 +37,6 @@ public unsafe class PlayerPhysics : StateBehaviour
 
     public override void TickUpdate()
     {
-        if (Runner.Tick % 10 == 0)
-        {
-            IsRed = !IsRed;
-        }
-
         StateInput input = Runner.GetInput(Player);
 
         var t = GetComponent<StateTransform>();
