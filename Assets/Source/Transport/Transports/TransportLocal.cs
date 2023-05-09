@@ -48,17 +48,6 @@ namespace GLHF.Transport
 
         private static TransportLocal listeningTransport;
 
-        private struct LatencyPacket
-        {
-            public Packet Packet;
-            public float Latency;
-            public TransportLocal TargetPeer;
-        }
-
-        private readonly List<LatencyPacket> pendingSendPackets = new List<LatencyPacket>();
-
-        private SimulatedLatency simulatedLatency;
-
         public override string ToString()
         {
             return $"{(this == listeningTransport ? "Server" : "Client")} {ID}";
@@ -80,25 +69,12 @@ namespace GLHF.Transport
             listeningTransport.ConnectionRequest(this);
         }
 
-        public void Update()
+        public void Poll()
         {
             foreach (var peer in peers.Values)
             {
                 ProcessChannel(peer.ReliableOrderedChannel, true);
                 ProcessChannel(peer.ReliableChannel, false);
-            }
-
-            // Send packets with simulated latency.
-            for (int i = 0; i < pendingSendPackets.Count; i++)
-            {
-                LatencyPacket packet = pendingSendPackets[i];
-
-                if (Time.time > packet.Latency + packet.Packet.SendTime)
-                {
-                    packet.TargetPeer.ReceiveInternal(packet.Packet);
-                    pendingSendPackets.RemoveAt(i);
-                    i--;
-                }
             }
         }
 
@@ -113,11 +89,6 @@ namespace GLHF.Transport
             }
 
             peers.Clear();
-        }
-
-        public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
-        {
-            this.simulatedLatency = simulatedLatency;
         }
 
         public void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod)
@@ -138,21 +109,7 @@ namespace GLHF.Transport
 
             channel.SendSequenceNumber++;
 
-            if (simulatedLatency.Equals(default(SimulatedLatency)))
-                transport.ReceiveInternal(packet);
-            else
-            {
-                float latency = UnityEngine.Random.Range(simulatedLatency.MinDelay, simulatedLatency.MaxDelay) / 1000f;
-
-                LatencyPacket latencyPacket = new LatencyPacket()
-                {
-                    Packet = packet,
-                    Latency = latency,
-                    TargetPeer = transport
-                };
-
-                pendingSendPackets.Add(latencyPacket);
-            }
+            transport.ReceiveInternal(packet);
         }
 
         public void SendToAll(byte[] data, DeliveryMethod deliveryMethod)

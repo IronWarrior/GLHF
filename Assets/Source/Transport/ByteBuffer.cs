@@ -7,12 +7,7 @@ namespace GLHF.Transport
 
         private const int defaultCapacity = 1024;
 
-        public ByteBuffer()
-        {
-            Data = new byte[defaultCapacity];
-        }
-
-        public ByteBuffer(int capacity)
+        public ByteBuffer(int capacity=defaultCapacity)
         {
             Data = new byte[capacity];
 
@@ -22,6 +17,8 @@ namespace GLHF.Transport
         public ByteBuffer(byte[] data)
         {
             Data = data;
+
+            Position = 0;
         }
 
         public void Put<T>(T value) where T : unmanaged

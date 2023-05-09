@@ -60,11 +60,11 @@ namespace GLHF
         private float playbackTime;
         #endregion
 
-        private ITransport transport;
+        private Transporter transporter;
         private Config config;
 
         #region Connection Methods
-        public void Host(int port, Config config, ITransport transport = null)
+        public void Host(int port, Config config, Transporter transporter)
         {
             this.config = config;
 
@@ -72,14 +72,11 @@ namespace GLHF
             Role = RunnerRole.Host;
             DontDestroyOnLoad(gameObject);
 
-            if (transport == null)
-                transport = new TransportLocal();
+            this.transporter = transporter;
 
-            transport.OnReceive += Transport_OnReceive;
-            transport.OnPeerConnected += Transport_OnPeerConnected;
-            transport.Listen(port);
-
-            this.transport = transport;
+            transporter.OnReceive += Transport_OnReceive;
+            transporter.OnPeerConnected += Transport_OnPeerConnected;
+            transporter.Listen(port);
 
             clientInputBuffers = new List<ClientInputBuffer>();
 
@@ -89,9 +86,11 @@ namespace GLHF
             playerJoinEvents++;
 
             Connected = true;
+            
+            this.transporter = transporter;
         }
 
-        public void Join(int port, string ip, Config config, ITransport transport = null)
+        public void Join(int port, string ip, Config config, Transporter transporter)
         {
             this.config = config;
 
@@ -100,23 +99,20 @@ namespace GLHF
             Role = RunnerRole.Client;
             DontDestroyOnLoad(gameObject);
 
-            if (transport == null)
-                transport = new TransportLocal();
-
-            transport.OnReceive += Transport_OnReceive;
-            transport.OnPeerConnected += Transport_OnPeerConnected;
-            transport.OnPeerDisconnected += Transport_OnPeerDisconnected;
-            transport.Connect(ip, port);
+            transporter.OnReceive += Transport_OnReceive;
+            transporter.OnPeerConnected += Transport_OnPeerConnected;
+            transporter.OnPeerDisconnected += Transport_OnPeerDisconnected;
+            transporter.Connect(ip, port);
 
             unconsumedServerStates = new OrderedMessageBuffer<ServerInputMessage>();
             pendingServerStates = new MessageBuffer<ServerInputMessage>(DeltaTime);
 
-            this.transport = transport;
+            this.transporter = transporter;
         }
 
         public void Shutdown()
         {
-            transport.Shutdown();
+            transporter.Shutdown();
 
             UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(Scene);
 
@@ -149,7 +145,7 @@ namespace GLHF
                     buffer.Put(data.Length);
                     buffer.Put(data);
 
-                    transport.Send(peerId, buffer.Data, DeliveryMethod.Reliable);
+                    transporter.Send(peerId, buffer.Data, DeliveryMethod.Reliable);
                 }
             }
 
@@ -216,12 +212,12 @@ namespace GLHF
         {
             Debug.Assert(Role == RunnerRole.Host, "Clients are not permitted to initiate game start.");
 
-            ByteBuffer buffer = new ByteBuffer();
+            ByteBuffer buffer = new ByteBuffer(1024);
             buffer.Put((byte)MessageType.Start);
             buffer.Put(0);
             buffer.Put(PlayerCount);
 
-            transport.SendToAll(buffer.Data, DeliveryMethod.ReliableOrdered);
+            transporter.SendToAll(buffer.Data, DeliveryMethod.ReliableOrdered);
 
             playerJoinEvents = PlayerCount;
 
@@ -376,7 +372,7 @@ namespace GLHF
         private void Update()
         {
             // Check for incoming messages, firing any applicable events.
-            transport.Update();
+            transporter.Poll();
 
             if (Running)
             {
@@ -413,7 +409,7 @@ namespace GLHF
                         ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum, playerJoinEvents);
                         serverInputMessage.Write(byteBuffer);
 
-                        transport.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+                        transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
 
                         playerJoinEvents = 0;
 
@@ -458,7 +454,7 @@ namespace GLHF
                             ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput, Tick);
                             clientInputMessage.Write(byteBuffer);
 
-                            transport.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+                            transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
                         }
 
                         Tick++;

@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
-using System;
 
 namespace GLHF
 {
@@ -45,18 +44,18 @@ namespace GLHF
                 {
                     for (int i = 0; i < clients; i++)
                     {
-                        BuildRunner(out Runner runner, out ITransport transport);
+                        BuildRunner(out Runner runner, out Transporter transporter);
 
                         if (i == 0)
                         {
                             runner.name = "Host";
-                            runner.Host(port, config, transport);
+                            runner.Host(port, config, transporter);
                             host = runner;
                         }
                         else
                         {
                             runner.name = $"Client {i}";
-                            runner.Join(port, "localhost", config, transport);
+                            runner.Join(port, "localhost", config, transporter);
                         }
 
                         runners.Add(runner);
@@ -90,10 +89,10 @@ namespace GLHF
 
         public void AddClient(string ip)
         {
-            BuildRunner(out Runner runner, out ITransport transport);
+            BuildRunner(out Runner runner, out Transporter transporter);
 
             runner.name = $"Client {runners.Count - 1}";
-            runner.Join(port, ip, config, transport);
+            runner.Join(port, ip, config, transporter);
 
             runners.Add(runner);
 
@@ -108,22 +107,16 @@ namespace GLHF
             return !useLocalTransport || (host != null && host.Running);
         }
 
-        private void BuildRunner(out Runner runner, out ITransport transport)
+        private void BuildRunner(out Runner runner, out Transporter transporter)
         {
             runner = new GameObject().AddComponent<Runner>();
-
-            transport = useLocalTransport ? (ITransport)new TransportLocal() : new TransportLiteNetLib();
+            
+            ITransport transport = useLocalTransport ? (ITransport)new TransportLocal() : new TransportLiteNetLib();
+            transporter = new Transporter(transport);
 
             if (useSimulatedLatency)
             {
-                try
-                {
-                    transport.SetSimulatedLatency(new SimulatedLatency() { MaxDelay = maxLatencyMilliseconds, MinDelay = minLatencyMilliseconds });
-                }
-                catch (NotImplementedException)
-                {
-                    Debug.LogError($"Attempted to set simulated latency on ITransport implementation that does not support it ({transport.GetType()}).");
-                }
+                transporter.SetSimulatedLatency(new Transporter.SimulatedLatency() { MaxDelay = maxLatencyMilliseconds, MinDelay = minLatencyMilliseconds });
             }
         }
 

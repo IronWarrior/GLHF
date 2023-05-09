@@ -38,7 +38,7 @@ namespace GLHF.Transport
             netManager.Connect(ip, port, "Test");
         }
 
-        public void Update()
+        public void Poll()
         {
             netManager.PollEvents();
         }
@@ -57,11 +57,6 @@ namespace GLHF.Transport
         {
             foreach (var peer in peers.Values)
                 peer.Send(data, GetDeliveryMethod(deliveryMethod));
-        }
-
-        public void SetSimulatedLatency(SimulatedLatency simulatedLatency)
-        {
-            throw new NotImplementedException();
         }
 
         private void ConnectionRequestEvent(ConnectionRequest request)

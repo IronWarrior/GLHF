@@ -10,22 +10,17 @@ namespace GLHF.Transport
     {
         event Action<int> OnPeerConnected;
         event Action<int> OnPeerDisconnected;
-
-        // TODO: Should replace byte with ByteBuffer for easier use.
         event Action<int, float, byte[]> OnReceive;
 
         void Listen(int port);
         void Connect(string ip, int port);
         void Shutdown();
-        void Update();
+        void Poll();
 
-        // TODO: Same as above, replace with ByteBuffer.
         void Send(int peerId, byte[] data, DeliveryMethod deliveryMethod);
         void SendToAll(byte[] data, DeliveryMethod deliveryMethod);
-        void SetSimulatedLatency(SimulatedLatency simulatedLatency);
     }
     
-    // TODO: Pull this out, wrap ITransports in TransportControllers that spoof the latency?
     public struct SimulatedLatency
     {
         public int MinDelay, MaxDelay;
