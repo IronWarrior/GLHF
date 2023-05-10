@@ -224,9 +224,9 @@ MonoBehaviour:
   clients: 2
   port: 7778
   useLocalTransport: 1
-  useSimulatedLatency: 0
-  minLatencyMilliseconds: 400
-  maxLatencyMilliseconds: 450
+  useSimulatedLatency: 1
+  minLatencyMilliseconds: 300
+  maxLatencyMilliseconds: 300
 --- !u!4 &230635089
 Transform:
   m_ObjectHideFlags: 0

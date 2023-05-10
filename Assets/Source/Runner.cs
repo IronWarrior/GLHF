@@ -168,7 +168,7 @@ namespace GLHF
 
                 ClientInputMessage message = new ClientInputMessage(buffer);
 
-                clientInputBuffers[id].Insert(message);
+                clientInputBuffers[id].Insert(message, Tick, DeltaTime - deltaTimeAccumulated, DeltaTime);
             }
             else
             {
@@ -275,14 +275,17 @@ namespace GLHF
                         TickEvents();
 
                         TickUpdate();
-
+                        
                         long checksum = snapshot.Allocator.Checksum();
 
-                        ByteBuffer byteBuffer = new ByteBuffer();
-                        ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum, playerJoinEvents);
-                        serverInputMessage.Write(byteBuffer);
+                        for (int i = 0; i < clientInputBuffers.Count; i++)
+                        {
+                            ByteBuffer byteBuffer = new ByteBuffer();
+                            ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum, playerJoinEvents, clientInputBuffers[i].Error);
+                            serverInputMessage.Write(byteBuffer);
 
-                        transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+                            transporter.Send(i, byteBuffer.Data, DeliveryMethod.Reliable);
+                        }
 
                         playerJoinEvents = 0;
 

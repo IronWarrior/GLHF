@@ -16,14 +16,16 @@ namespace GLHF
         public readonly List<StateInput> Inputs;
 
         public readonly int NewPlayersJoining;
+        public readonly float RequestedInputTimingDelta;
 
-        public ServerInputMessage(List<StateInput> inputs, int tick, long checksum, int newPlayersJoining)
+        public ServerInputMessage(List<StateInput> inputs, int tick, long checksum, int newPlayersJoining, float requestedInputTimingDelta)
         {
             Inputs = inputs;
             Checksum = checksum;
             this.tick = tick;
 
             NewPlayersJoining = newPlayersJoining;
+            RequestedInputTimingDelta = requestedInputTimingDelta;
         }
 
         public ServerInputMessage(ByteBuffer buffer)
@@ -41,6 +43,7 @@ namespace GLHF
             }
 
             NewPlayersJoining = buffer.Get<int>();
+            RequestedInputTimingDelta = buffer.Get<float>();
         }
 
         public void Write(ByteBuffer buffer)
@@ -57,6 +60,7 @@ namespace GLHF
             }
 
             buffer.Put(NewPlayersJoining);
+            buffer.Put(RequestedInputTimingDelta);
         }
     }
 }

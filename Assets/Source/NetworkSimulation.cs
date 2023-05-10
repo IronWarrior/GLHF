@@ -37,9 +37,9 @@ namespace GLHF.Network
             if (states.TryPop(tick, confirmedTime, deltaTime, out serverInputMessage))
             {
                 // Check the amount of error, increment our predicted time if necessary.
-                float predictionError = 0;
+                predictedTime += serverInputMessage.RequestedInputTimingDelta;
 
-                predictedTime += predictionError;
+                Debug.Log(predictedTime);
 
                 return true;
             }
