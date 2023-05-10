@@ -221,7 +221,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 041163e14507885418a5f79115eab73c, type: 2}
-  clients: 1
+  clients: 2
   port: 7778
   useLocalTransport: 1
   useSimulatedLatency: 0

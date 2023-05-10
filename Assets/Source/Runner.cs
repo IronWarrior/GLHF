@@ -386,18 +386,26 @@ namespace GLHF
         {
             if (Tick == 0)
             {
-                foreach (var so in gameObjectWorld.StateObjects)
+                LinkedListNode<StateObject> startNode = gameObjectWorld.StateObjects.First;
+
+                while (startNode != null)
                 {
-                    if (so.IsSceneObject)
+                    if (startNode.Value.IsSceneObject)
                     {
-                        so.TickStart();
+                        startNode.Value.TickStart();
                     }
+
+                    startNode = startNode.Next;
                 }
             }
 
-            foreach (var so in gameObjectWorld.StateObjects)
+            LinkedListNode<StateObject> node = gameObjectWorld.StateObjects.First;
+
+            while (node != null)
             {
-                so.TickUpdate();
+                node.Value.TickUpdate();
+
+                node = node.Next;
             }
         }
 

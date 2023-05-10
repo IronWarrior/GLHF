@@ -6,9 +6,8 @@ namespace GLHF
 {
     public unsafe class GameObjectWorld
     {
-        public IReadOnlyCollection<StateObject> StateObjects => stateObjects;
+        public LinkedList<StateObject> StateObjects { get; private set; }
 
-        private readonly LinkedList<StateObject> stateObjects;
         private readonly Dictionary<int, StateObject> prefabTable;
 
         private Snapshot snapshot;
@@ -17,7 +16,7 @@ namespace GLHF
         {
             this.prefabTable = prefabTable;
 
-            stateObjects = new LinkedList<StateObject>();
+            StateObjects = new LinkedList<StateObject>();
             
             this.snapshot = snapshot;
         }
@@ -28,7 +27,7 @@ namespace GLHF
             {
                 Allocate(so);
 
-                this.stateObjects.AddFirst(so);
+                this.StateObjects.AddFirst(so);
             }
         }
 
@@ -40,7 +39,7 @@ namespace GLHF
         {
             this.snapshot = snapshot;
 
-            LinkedListNode<StateObject> node = stateObjects.First;
+            LinkedListNode<StateObject> node = StateObjects.First;
 
             while (node != null)
             {
@@ -48,7 +47,7 @@ namespace GLHF
                 
                 if (!node.Value.IsSceneObject)
                 {
-                    stateObjects.Remove(node);
+                    StateObjects.Remove(node);
 
                     Object.Destroy(node.Value.gameObject);
                 }
@@ -76,7 +75,7 @@ namespace GLHF
             
             SceneManager.MoveGameObjectToScene(spawned.gameObject, scene);
 
-            stateObjects.AddFirst(spawned);
+            StateObjects.AddFirst(spawned);
 
             return spawned;
         }
@@ -88,7 +87,7 @@ namespace GLHF
 
             Allocate(spawned.Object);
 
-            stateObjects.AddFirst(spawned.Object);
+            StateObjects.AddFirst(spawned.Object);
 
             return spawned;
         }
@@ -103,7 +102,7 @@ namespace GLHF
         {
             snapshot.Allocator.Release(so.Ptr);
 
-            stateObjects.Remove(so);
+            StateObjects.Remove(so);
             Object.Destroy(so.gameObject);
         }
     }
