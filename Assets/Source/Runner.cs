@@ -1,3 +1,4 @@
+using GLHF.Network;
 using GLHF.Transport;
 using System;
 using System.Collections;
@@ -54,10 +55,8 @@ namespace GLHF
 
         // TODO: Things that are client or server specific should be encapsulated.
         #region Client
+        private NetworkSimulation clientSimulation;
         private OrderedMessageBuffer<ServerInputMessage> unconsumedServerStates;
-        private MessageBuffer<ServerInputMessage> pendingServerStates;
-
-        private float playbackTime;
         #endregion
 
         private Transporter transporter;
@@ -86,7 +85,7 @@ namespace GLHF
             playerJoinEvents++;
 
             Connected = true;
-            
+
             this.transporter = transporter;
         }
 
@@ -105,7 +104,7 @@ namespace GLHF
             transporter.Connect(ip, port);
 
             unconsumedServerStates = new OrderedMessageBuffer<ServerInputMessage>();
-            pendingServerStates = new MessageBuffer<ServerInputMessage>(DeltaTime);
+            clientSimulation = new NetworkSimulation(DeltaTime, config.JitterTimescale);
 
             this.transporter = transporter;
         }
@@ -176,7 +175,7 @@ namespace GLHF
                 if (msgType == MessageType.Start)
                 {
                     int sceneIndex = buffer.Get<int>();
-                    PlayerCount = buffer.Get<int>();                    
+                    PlayerCount = buffer.Get<int>();
 
                     bool hasState = buffer.Get<bool>();
 
@@ -191,7 +190,7 @@ namespace GLHF
                         OnComplete = () =>
                         {
                             Tick = tick;
-                            playbackTime = Tick * DeltaTime;
+                            clientSimulation.SetConfirmedTime(Tick * DeltaTime);
                             snapshot.Allocator.CopyFrom(state);
                             gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
                         };
@@ -292,21 +291,18 @@ namespace GLHF
                 }
                 else
                 {
-                    int nextTickToEnterBuffer = pendingServerStates.NewestTick != -1 ? pendingServerStates.NewestTick + 1 : Tick;
+                    int nextTickToEnterBuffer = clientSimulation.NextTickToEnter(Tick);
 
                     while (unconsumedServerStates.TryDequeue(nextTickToEnterBuffer, out ServerInputMessage message))
                     {
-                        pendingServerStates.Insert(message, UnityEngine.Time.time);
+                        clientSimulation.Insert(message, UnityEngine.Time.time);
 
                         nextTickToEnterBuffer++;
                     }
 
-                    float error = pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
-                    float timescale = config.JitterTimescale.CalculateTimescale(error);
+                    clientSimulation.Integrate(UnityEngine.Time.time, UnityEngine.Time.deltaTime);
 
-                    playbackTime += UnityEngine.Time.deltaTime * timescale;
-
-                    while (pendingServerStates.TryPop(Tick, playbackTime, DeltaTime, out ServerInputMessage serverInputMessage))
+                    while (clientSimulation.TryPop(Tick, out ServerInputMessage serverInputMessage))
                     {
                         Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
@@ -377,7 +373,7 @@ namespace GLHF
                 var joineds = FindObjectsOfType<IPlayerJoined>();
 
                 for (int i = 0; i < playerJoinEvents; i++)
-                {                   
+                {
                     foreach (var joined in joineds)
                     {
                         joined.PlayerJoined();
@@ -401,10 +397,7 @@ namespace GLHF
 
             foreach (var so in gameObjectWorld.StateObjects)
             {
-                if (so.IsSceneObject)
-                {
-                    so.TickUpdate();
-                }
+                so.TickUpdate();
             }
         }
 
@@ -483,37 +476,47 @@ namespace GLHF
         #region Debug
         public int MessageBufferCount()
         {
+            return 0;
+
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingServerStates.Size;
+            //return pendingServerStates.Size;
         }
 
         public float MessageBufferDelay()
         {
+            return 0;
+
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingServerStates.CurrentDelay(DeltaTime, UnityEngine.Time.time, playbackTime);
+            //return pendingServerStates.CurrentDelay(DeltaTime, UnityEngine.Time.time, playbackTime);
         }
 
         public float TargetBufferDelay()
         {
+            return 0;
+
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingServerStates.TargetDelay();
+            //return pendingServerStates.TargetDelay();
         }
 
         public float CurrentBufferError()
         {
+            return 0;
+
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
+            //return pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
         }
 
         public int NextTick()
         {
             Debug.Assert(Role == RunnerRole.Client);
 
-            return pendingServerStates.OldestTick;
+            return 0;
+
+            //return pendingServerStates.OldestTick;
         }
 
         public float Ping()
@@ -525,7 +528,9 @@ namespace GLHF
 
         public float Timescale()
         {
-            return config.JitterTimescale.CalculateTimescale(pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime));
+            return 0;
+
+            //return config.JitterTimescale.CalculateTimescale(pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime));
         }
 
         public int ClientInputBufferCount()
