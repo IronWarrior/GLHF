@@ -1,13 +1,17 @@
+using System.Collections.Generic;
+
 namespace GLHF
 {
     // TODO: When updated for prediction, would report receive error, etc.
     public class ClientInputBuffer
     {
-        public int Size => pending.Size;
+        public int Size => queue.Count;
         public float Error { get; private set; }
 
-        private readonly OrderedMessageBuffer<ClientInputMessage> unconsumed = new OrderedMessageBuffer<ClientInputMessage>();
-        private readonly MessageBuffer<ClientInputMessage> pending = new MessageBuffer<ClientInputMessage>(1);
+        //private readonly OrderedMessageBuffer<ClientInputMessage> unconsumed = new OrderedMessageBuffer<ClientInputMessage>();
+        //private readonly MessageBuffer<ClientInputMessage> pending = new MessageBuffer<ClientInputMessage>(1);
+
+        private readonly Queue<ClientInputMessage> queue = new Queue<ClientInputMessage>();
 
         private int nextTickToBeConsumed;
 
@@ -29,27 +33,44 @@ namespace GLHF
             // Also should add in some standard dev as a buffer, based on the regularity of the arrivals.
             Error = tickDelta * deltaTime;
 
-            unconsumed.Insert(message);
+            if (tickDelta <= 0)
+            {
+                queue.Enqueue(message);
+            }
+
+            // unconsumed.Insert(message);
         }
 
         public bool TryPop(out ClientInputMessage message)
         {
-            while (unconsumed.TryDequeue(nextTickToBeConsumed, out ClientInputMessage unconsumedMessage))
+            if (queue.Count > 0)
             {
-                // Not really using the time...yet.
-                pending.Insert(unconsumedMessage, 0);
+                message = queue.Dequeue();
 
-                nextTickToBeConsumed++;
-            }
-
-            if (pending.TryPop(out message))
-            {
                 return true;
             }
             else
             {
+                message = null;
                 return false;
             }
+
+            //while (unconsumed.TryDequeue(nextTickToBeConsumed, out ClientInputMessage unconsumedMessage))
+            //{
+            //    // Not really using the time...yet.
+            //    pending.Insert(unconsumedMessage, 0);
+
+            //    nextTickToBeConsumed++;
+            //}
+
+            //if (pending.TryPop(out message))
+            //{
+            //    return true;
+            //}
+            //else
+            //{
+            //    return false;
+            //}
         }
     }
 }

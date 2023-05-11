@@ -57,6 +57,8 @@ namespace GLHF
         #region Client
         private NetworkSimulation clientSimulation;
         private OrderedMessageBuffer<ServerInputMessage> unconsumedServerStates;
+
+        private int forwardTick = -1;
         #endregion
 
         private Transporter transporter;
@@ -190,6 +192,7 @@ namespace GLHF
                         OnComplete = () =>
                         {
                             Tick = tick;
+                            forwardTick = tick;
                             clientSimulation.SetConfirmedTime(Tick * DeltaTime);
                             snapshot.Allocator.CopyFrom(state);
                             gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
@@ -266,7 +269,7 @@ namespace GLHF
 
                         for (int i = 0; i < clientInputBuffers.Count; i++)
                         {
-                            while (clientInputBuffers[i].TryPop(out ClientInputMessage inputMessage))
+                            if (clientInputBuffers[i].TryPop(out ClientInputMessage inputMessage))
                             {
                                 currentInputs[i + 1] = inputMessage.Input;
                             }
@@ -305,7 +308,7 @@ namespace GLHF
 
                     clientSimulation.Integrate(UnityEngine.Time.time, UnityEngine.Time.deltaTime);
 
-                    while (clientSimulation.TryPop(Tick, out ServerInputMessage serverInputMessage))
+                    while (clientSimulation.TryPop(Tick, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
                     {
                         Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
@@ -323,11 +326,18 @@ namespace GLHF
 
                         if (PollInput)
                         {
-                            ByteBuffer byteBuffer = new ByteBuffer();
-                            ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput, Tick);
-                            clientInputMessage.Write(byteBuffer);
+                            int targetForwardTick = Tick + clientSimulation.GetPredictedTickCount();
 
-                            transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+                            while (forwardTick <= targetForwardTick)
+                            {
+                                ByteBuffer byteBuffer = new ByteBuffer();
+                                ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput, forwardTick);
+                                clientInputMessage.Write(byteBuffer);
+
+                                transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+
+                                forwardTick++;
+                            }
                         }
 
                         Tick++;

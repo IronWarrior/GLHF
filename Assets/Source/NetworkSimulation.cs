@@ -11,6 +11,8 @@ namespace GLHF.Network
         private float confirmedTime;
         private float predictedTime;
 
+        private float lastPredictedTimeAdjustement;
+
         public NetworkSimulation(float deltaTime, JitterTimescale jitterTimescale)
         {
             this.deltaTime = deltaTime;
@@ -32,14 +34,16 @@ namespace GLHF.Network
             confirmedTime += additionalTime * timescale;
         }       
         
-        public bool TryPop(int tick, out ServerInputMessage serverInputMessage)
+        public bool TryPop(int tick, float currentTime, out ServerInputMessage serverInputMessage)
         {
             if (states.TryPop(tick, confirmedTime, deltaTime, out serverInputMessage))
             {
-                // Check the amount of error, increment our predicted time if necessary.
-                predictedTime += serverInputMessage.RequestedInputTimingDelta;
+                if (currentTime > lastPredictedTimeAdjustement + 2f)
+                {
+                    predictedTime = Mathf.Max(0, predictedTime + serverInputMessage.RequestedInputTimingDelta);
 
-                Debug.Log(predictedTime);
+                    lastPredictedTimeAdjustement = currentTime;
+                }
 
                 return true;
             }
