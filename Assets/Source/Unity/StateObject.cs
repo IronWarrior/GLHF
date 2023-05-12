@@ -23,7 +23,7 @@ namespace GLHF
         // [HideInInspector]
         public int BakedPrefabId = -1;
 
-        public bool IsSceneObject => BakedPrefabId == -1;
+        public bool IsSceneObject => BakedPrefabId < 0;
 
         private List<TickBehaviour> tickBehaviours;
         private List<StateBehaviour> stateBehaviours;
@@ -56,6 +56,27 @@ namespace GLHF
             {
                 tb.Runner = runner;
             }
+
+            foreach (var tb in tickBehaviours)
+            {
+                tb.Initialized();
+            }
+        }
+
+        public void SetPointer(byte* ptr)
+        {
+            Ptr = ptr;
+
+            PrefabId = BakedPrefabId;
+
+            int offset = sizeof(int) + sizeof(int);
+
+            foreach (var sb in stateBehaviours)
+            {
+                sb.Ptr = ptr + offset;
+
+                offset += sb.Size;
+            }
         }
 
         public override void TickStart()
@@ -87,22 +108,6 @@ namespace GLHF
             foreach (var tb in tickBehaviours)
             {
                 tb.RenderStart();
-            }
-        }
-
-        public void SetPointer(byte* ptr)
-        {
-            Ptr = ptr;
-
-            PrefabId = BakedPrefabId;
-
-            int offset = sizeof(int) + sizeof(int);
-
-            foreach (var sb in stateBehaviours)
-            {
-                sb.Ptr = ptr + offset;
-
-                offset += sb.Size;
             }
         }
     }

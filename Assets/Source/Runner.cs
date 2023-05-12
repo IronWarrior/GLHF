@@ -44,7 +44,6 @@ namespace GLHF
         private GameObjectWorld gameObjectWorld;
 
         public Snapshot snapshot;
-        public Allocator confirmedState;
 
         private List<StateInput> currentInputs = new List<StateInput>();
         private int playerJoinEvents = 0;
@@ -58,6 +57,7 @@ namespace GLHF
         private NetworkSimulation clientSimulation;
         private OrderedMessageBuffer<ServerInputMessage> unconsumedServerStates;
 
+        private Rollback rollback;
         private int forwardTick = -1;
         #endregion
 
@@ -214,7 +214,7 @@ namespace GLHF
         {
             Debug.Assert(Role == RunnerRole.Host, "Clients are not permitted to initiate game start.");
 
-            ByteBuffer buffer = new ByteBuffer(1024);
+            ByteBuffer buffer = new ByteBuffer();
             buffer.Put((byte)MessageType.Start);
             buffer.Put(0);
             buffer.Put(PlayerCount);
@@ -310,6 +310,9 @@ namespace GLHF
 
                     while (clientSimulation.TryPop(Tick, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
                     {
+                        // snapshot = rollback.Confirmed;
+                        RebuildGameObjectWorld();
+
                         Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
                         currentInputs = serverInputMessage.Inputs;
@@ -324,9 +327,17 @@ namespace GLHF
 
                         Debug.Assert(checksum == serverInputMessage.Checksum, "Checksums not equal.");
 
+                        Tick++;
+
                         if (PollInput)
                         {
                             int targetForwardTick = Tick + clientSimulation.GetPredictedTickCount();
+
+                            //rollback.CopyToPredicted();
+                            //snapshot = rollback.Predicted;
+
+                            //gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
+                            //RebuildGameObjectWorld();
 
                             while (forwardTick <= targetForwardTick)
                             {
@@ -337,10 +348,8 @@ namespace GLHF
                                 transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
 
                                 forwardTick++;
-                            }
-                        }
-
-                        Tick++;
+                            }                            
+                        }                        
                     }
                 }
 
@@ -363,7 +372,7 @@ namespace GLHF
 
             if (Role == RunnerRole.Client)
             {
-                confirmedState = new Allocator(snapshot.Allocator);
+                rollback = new Rollback(snapshot);
             }
 
             foreach (var so in gameObjectWorld.StateObjects)
@@ -459,7 +468,22 @@ namespace GLHF
         {
             snapshot.Allocator.CopyFrom(source);
 
+            RebuildGameObjectWorld();
+        }
+
+        private void RebuildGameObjectWorld()
+        {
             gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
+
+            foreach (var so in gameObjectWorld.StateObjects)
+            {
+                so.SetRunner(this);
+            }
+
+            foreach (var so in gameObjectWorld.StateObjects)
+            {
+                so.RenderStart();
+            }
         }
 
         public new T FindObjectOfType<T>() where T : class

@@ -16,6 +16,17 @@ public unsafe class PlayerPhysics : StateBehaviour
 
     private InputActions actions;
 
+    private void Awake()
+    {
+        actions = new InputActions();
+        actions.Enable();
+    }
+
+    public override void Initialized()
+    {
+        Runner.OnPollInput = OnPollInput;
+    }
+
     private StateInput OnPollInput()
     {
         StateInput input = new StateInput();
@@ -25,14 +36,6 @@ public unsafe class PlayerPhysics : StateBehaviour
         input.Fire = actions.Default.Fire.ReadValue<float>() > 0.5f;
 
         return input;
-    }
-
-    public override void TickStart()
-    {
-        actions = new InputActions();
-        actions.Enable();
-
-        Runner.OnPollInput = OnPollInput;
     }
 
     public override void TickUpdate()

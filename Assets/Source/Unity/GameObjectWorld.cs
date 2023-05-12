@@ -27,7 +27,7 @@ namespace GLHF
             {
                 Allocate(so);
 
-                this.StateObjects.AddFirst(so);
+                StateObjects.AddLast(so);
             }
         }
 
@@ -39,43 +39,66 @@ namespace GLHF
         {
             this.snapshot = snapshot;
 
-            LinkedListNode<StateObject> node = StateObjects.First;
-
-            while (node != null)
+            foreach (var so in StateObjects)
             {
-                var next = node.Next;
-                
-                if (!node.Value.IsSceneObject)
-                {
-                    StateObjects.Remove(node);
-
-                    Object.Destroy(node.Value.gameObject);
-                }
-
-                node = next;
+                if (!so.IsSceneObject)
+                    Object.Destroy(so.gameObject);
             }
+
+            StateObjects.Clear();
+
+            var scenePrefabTable = RetrieveSceneObjects(scene);
 
             Allocator.Block* current = null;
             
             while (snapshot.NextStateObject(current, out var next, out byte* ptr, out int prefabId))
             {
-                if (prefabId != -1)
+                if (prefabId >= 0)
                 {
-                    Spawn(prefabId, scene);
+                    Instantiate(prefabId, ptr, scene);
+                }
+                else
+                {
+                    var sceneObject = scenePrefabTable[prefabId];
+                    sceneObject.SetPointer(ptr);
+
+                    StateObjects.AddLast(sceneObject);
                 }
 
                 current = next;
             }
         }
 
-        public StateObject Spawn(int id, Scene scene)
+        private Dictionary<int, StateObject> RetrieveSceneObjects(Scene scene)
+        {
+            var results = new Dictionary<int, StateObject>();
+
+            GameObject[] roots = scene.GetRootGameObjects();
+
+            foreach (var root in roots)
+            {
+                foreach (var so in root.GetComponentsInChildren<StateObject>(true))
+                {
+                    if (so.IsSceneObject)
+                    {
+                        results.Add(so.PrefabId, so);
+                    }
+                }
+            }
+
+            return results;
+        }
+
+        public StateObject Instantiate(int id, byte* ptr, Scene scene)
         {
             var prefab = prefabTable[id];
             var spawned = Object.Instantiate(prefab);
             
             SceneManager.MoveGameObjectToScene(spawned.gameObject, scene);
 
-            StateObjects.AddFirst(spawned);
+            spawned.SetPointer(ptr);
+
+            StateObjects.AddLast(spawned);
 
             return spawned;
         }
@@ -87,7 +110,7 @@ namespace GLHF
 
             Allocate(spawned.Object);
 
-            StateObjects.AddFirst(spawned.Object);
+            StateObjects.AddLast(spawned.Object);
 
             return spawned;
         }

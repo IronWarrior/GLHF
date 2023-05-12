@@ -1,5 +1,7 @@
 using NUnit.Framework;
 using GLHF.Transport;
+using UnityEngine;
+using System.Collections.Generic;
 
 namespace GLHF.Tests
 {

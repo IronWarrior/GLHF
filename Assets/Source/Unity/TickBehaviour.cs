@@ -2,11 +2,12 @@ using UnityEngine;
 
 namespace GLHF
 {
-    public class TickBehaviour : MonoBehaviour
+    public abstract class TickBehaviour : MonoBehaviour
     {
         public Runner Runner { get; set; }
         public StateObject Object { get; set; }
 
+        public virtual void Initialized() { }
         public virtual void TickStart() { }
         public virtual void TickUpdate() { }
         public virtual void TickDestroy() { }

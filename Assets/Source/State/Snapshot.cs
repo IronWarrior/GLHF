@@ -33,7 +33,6 @@ namespace GLHF
         public Snapshot(Snapshot from)
         {
             Allocator = new Allocator(from.Allocator);
-            Allocator.CopyFrom(from.Allocator);
 
             tick = (int*)(Allocator.Head + sizeof(Allocator.Block));
         }

@@ -225,7 +225,7 @@ MonoBehaviour:
   port: 7778
   useLocalTransport: 1
   useSimulatedLatency: 1
-  minLatencyMilliseconds: 300
+  minLatencyMilliseconds: 250
   maxLatencyMilliseconds: 300
 --- !u!4 &230635089
 Transform:
@@ -849,7 +849,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8f23976d3a30f494180070726d7a21a8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BakedPrefabId: -1
+  BakedPrefabId: -2
 --- !u!1 &1381529417
 GameObject:
   m_ObjectHideFlags: 0
