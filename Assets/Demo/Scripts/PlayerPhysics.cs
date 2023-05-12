@@ -22,6 +22,11 @@ public unsafe class PlayerPhysics : StateBehaviour
         actions.Enable();
     }
 
+    private void OnDestroy()
+    {
+        actions.Dispose();
+    }
+
     public override void Initialized()
     {
         Runner.OnPollInput = OnPollInput;
