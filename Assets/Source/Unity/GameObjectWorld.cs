@@ -42,7 +42,7 @@ namespace GLHF
             foreach (var so in StateObjects)
             {
                 if (!so.IsSceneObject)
-                    Object.Destroy(so.gameObject);
+                    Destroy(so);
             }
 
             StateObjects.Clear();
@@ -77,6 +77,9 @@ namespace GLHF
 
             foreach (var root in roots)
             {
+                if (root.activeSelf != true)
+                    continue;
+
                 foreach (var so in root.GetComponentsInChildren<StateObject>(true))
                 {
                     if (so.IsSceneObject)
@@ -89,11 +92,11 @@ namespace GLHF
             return results;
         }
 
-        public StateObject Instantiate(int id, byte* ptr, Scene scene)
+        private StateObject Instantiate(int id, byte* ptr, Scene scene)
         {
             var prefab = prefabTable[id];
             var spawned = Object.Instantiate(prefab);
-            
+
             SceneManager.MoveGameObjectToScene(spawned.gameObject, scene);
 
             spawned.SetPointer(ptr);
@@ -101,6 +104,12 @@ namespace GLHF
             StateObjects.AddLast(spawned);
 
             return spawned;
+        }
+
+        private void Destroy(StateObject so)
+        {
+            so.ClearPointer();
+            Object.Destroy(so.gameObject);
         }
 
         public T Spawn<T>(T prefab, Scene scene) where T : TickBehaviour
@@ -126,7 +135,7 @@ namespace GLHF
             snapshot.Allocator.Release(so.Ptr);
 
             StateObjects.Remove(so);
-            Object.Destroy(so.gameObject);
+            Destroy(so);
         }
     }
 }

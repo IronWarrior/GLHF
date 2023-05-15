@@ -1,7 +1,5 @@
 using NUnit.Framework;
 using GLHF.Transport;
-using UnityEngine;
-using System.Collections.Generic;
 
 namespace GLHF.Tests
 {
@@ -23,6 +21,9 @@ namespace GLHF.Tests
             byte[] testData = new byte[] { 1, 2, 3 };
             server.Send(0, testData, DeliveryMethod.ReliableOrdered);
             client.Poll();
+
+            client.Shutdown();
+            server.Shutdown();
 
             Assert.AreEqual(testData, receivedData);
         }

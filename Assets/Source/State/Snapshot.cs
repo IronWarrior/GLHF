@@ -60,5 +60,40 @@ namespace GLHF
 
             return false;
         }
+
+        public int StateObjectCount()
+        {
+            int count = 0;
+
+            Allocator.Block* current = null;
+
+            while (NextStateObject(current, out var next, out byte* _, out int _))
+            {
+                count++;
+
+                current = next;
+            }
+
+            return count;
+        }
+
+        public Allocator.Block*[] RetrieveStateObjects()
+        {
+            var stateObjects = new Allocator.Block*[StateObjectCount()];
+
+            Allocator.Block* current = null;
+
+            int i = 0;
+
+            while (NextStateObject(current, out var next, out byte* _, out int _))
+            {
+                stateObjects[i] = next;
+                current = next;
+
+                i++;
+            }
+
+            return stateObjects;
+        }
     }
 }

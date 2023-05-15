@@ -24,6 +24,7 @@ namespace GLHF
         public int BakedPrefabId = -1;
 
         public bool IsSceneObject => BakedPrefabId < 0;
+        public bool Spawned => Ptr != null;
 
         private List<TickBehaviour> tickBehaviours;
         private List<StateBehaviour> stateBehaviours;
@@ -63,7 +64,7 @@ namespace GLHF
             }
         }
 
-        public void SetPointer(byte* ptr)
+        internal void SetPointer(byte* ptr)
         {
             Ptr = ptr;
 
@@ -79,11 +80,35 @@ namespace GLHF
             }
         }
 
+        internal void ClearPointer()
+        {
+            Ptr = null;
+        }
+
+        public StateBehaviour StateBehaviourContainingPointer(byte* ptr)
+        {
+            foreach (var sb in stateBehaviours)
+            {
+                if (ptr >= sb.Ptr && ptr < sb.Ptr + sb.Size)
+                    return sb;
+            }
+
+            return null;
+        }
+
         public override void TickStart()
         {
             foreach (var tb in tickBehaviours)
             {
                 tb.TickStart();
+            }
+        }
+
+        public override void TickDestroy()
+        {
+            foreach (var tb in tickBehaviours)
+            {
+                tb.TickDestroy();
             }
         }
 

@@ -24,17 +24,25 @@ namespace GLHF
         bool useSimulatedLatency;
 
         [SerializeField]
+        bool useDesyncAnalyzer;
+
+        [SerializeField]
         int minLatencyMilliseconds, maxLatencyMilliseconds;
 
         private Runner host;
 
         private List<Runner> runners;
 
+        private DesyncAnalyzer desyncAnalyzer;
+
         private IEnumerator Start()
         {
             if (FindObjectOfType<Runner>() == null)
             {
                 DontDestroyOnLoad(gameObject);
+
+                if (useDesyncAnalyzer)
+                    desyncAnalyzer = new DesyncAnalyzer();
 
                 host = null;
 
@@ -51,11 +59,15 @@ namespace GLHF
                             runner.name = "Host";
                             runner.Host(port, config, transporter);
                             host = runner;
+
+                            desyncAnalyzer?.SetHost(runner);
                         }
                         else
                         {
                             runner.name = $"Client {i}";
                             runner.Join(port, "localhost", config, transporter);
+
+                            desyncAnalyzer?.AddClient(runner);
                         }
 
                         runners.Add(runner);
@@ -95,6 +107,8 @@ namespace GLHF
             runner.Join(port, ip, config, transporter);
 
             runners.Add(runner);
+
+            desyncAnalyzer?.AddClient(runner);
 
             if (runners.Count == 1)
             {

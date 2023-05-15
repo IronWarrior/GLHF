@@ -14,6 +14,11 @@ namespace GLHF
         {
             public int Size;            
             public bool InUse;
+
+            public static byte* Data(Block* block)
+            {
+                return ((byte*)block) + sizeof(Block);
+            }
         }
 
         /// <summary>
@@ -76,7 +81,7 @@ namespace GLHF
             throw new OutOfMemoryException();
         }
 
-        private int CalculateAllocatedMemory()
+        public int CalculateAllocatedMemory()
         {
             int offset = 0;
 
@@ -121,6 +126,19 @@ namespace GLHF
             byte* dataPtr = GetPtrAt(offset + sizeof(Block));
 
             return dataPtr;
+        }
+
+        public byte* Allocate(byte[] data)
+        {
+            byte* ptr = Allocate(data.Length);
+
+            for (int i = 0; i < data.Length; i++)
+            {
+                byte* b = (ptr + i);
+                *b = data[i];
+            }
+
+            return ptr;
         }
 
         public void Release(byte* dataPtr)
@@ -187,12 +205,17 @@ namespace GLHF
             }
         }
 
-        public byte[] ToByteArray()
+        public byte[] ToByteArray(bool trimmed)
         {
-            int allocatedMemoryByteCount = CalculateAllocatedMemory();
+            int size;
 
-            byte[] data = new byte[allocatedMemoryByteCount];
-            Marshal.Copy(ptr, data, 0, allocatedMemoryByteCount);
+            if (trimmed)
+                size = CalculateAllocatedMemory();
+            else
+                size = this.size;
+
+            byte[] data = new byte[size];
+            Marshal.Copy(ptr, data, 0, size);
 
             return data;
         }

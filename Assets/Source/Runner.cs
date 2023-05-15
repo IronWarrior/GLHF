@@ -44,6 +44,7 @@ namespace GLHF
         private GameObjectWorld gameObjectWorld;
 
         public Snapshot snapshot;
+        public event Action<Snapshot> OnSimulateTick;
 
         private List<StateInput> currentInputs = new List<StateInput>();
         private int playerJoinEvents = 0;
@@ -54,6 +55,8 @@ namespace GLHF
 
         // TODO: Things that are client or server specific should be encapsulated.
         #region Client
+        public event Action<Snapshot> OnDesync;
+
         private NetworkSimulation clientSimulation;
         private OrderedMessageBuffer<ServerInputMessage> unconsumedServerStates;
 
@@ -141,7 +144,7 @@ namespace GLHF
                     buffer.Put(true);
                     buffer.Put(Tick);
 
-                    byte[] data = snapshot.Allocator.ToByteArray();
+                    byte[] data = snapshot.Allocator.ToByteArray(true);
 
                     buffer.Put(data.Length);
                     buffer.Put(data);
@@ -265,7 +268,7 @@ namespace GLHF
                     {
                         deltaTimeAccumulated -= DeltaTime;
 
-                        currentInputs[0] = polledInput;
+                        // currentInputs[0] = polledInput;
 
                         for (int i = 0; i < clientInputBuffers.Count; i++)
                         {
@@ -278,7 +281,9 @@ namespace GLHF
                         TickEvents();
 
                         TickUpdate();
-                        
+
+                        OnSimulateTick?.Invoke(snapshot);
+
                         long checksum = snapshot.Allocator.Checksum();
 
                         for (int i = 0; i < clientInputBuffers.Count; i++)
@@ -311,7 +316,6 @@ namespace GLHF
                     while (clientSimulation.TryPop(Tick, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
                     {
                         // snapshot = rollback.Confirmed;
-                        RebuildGameObjectWorld();
 
                         Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
@@ -323,9 +327,26 @@ namespace GLHF
 
                         TickUpdate();
 
+                        gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
+
+                        foreach (var so in gameObjectWorld.StateObjects)
+                        {
+                            so.SetRunner(this);
+                        }
+
+                        foreach (var so in gameObjectWorld.StateObjects)
+                        {
+                            so.RenderStart();
+                        }
+
                         long checksum = snapshot.Allocator.Checksum();
 
-                        Debug.Assert(checksum == serverInputMessage.Checksum, "Checksums not equal.");
+                        if (checksum != serverInputMessage.Checksum)
+                        {
+                            OnDesync?.Invoke(snapshot);
+
+                            Debug.LogError($"Checksums not equal.");
+                        }
 
                         Tick++;
 
@@ -425,9 +446,11 @@ namespace GLHF
 
             while (node != null)
             {
+                var next = node.Next;
+
                 node.Value.TickUpdate();
 
-                node = node.Next;
+                node = next;
             }
         }
 
@@ -492,6 +515,9 @@ namespace GLHF
 
             foreach (var root in roots)
             {
+                if (root.activeSelf != true)
+                    continue;
+
                 var result = root.GetComponentInChildren<T>();
 
                 if (result != null)
@@ -511,6 +537,9 @@ namespace GLHF
 
             foreach (var root in roots)
             {
+                if (root.activeSelf != true)
+                    continue;
+
                 results.AddRange(root.GetComponentsInChildren<T>());
             }
 
