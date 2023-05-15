@@ -369,8 +369,8 @@ namespace GLHF
                                 transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
 
                                 forwardTick++;
-                            }                            
-                        }                        
+                            }
+                        }
                     }
                 }
 
@@ -427,30 +427,30 @@ namespace GLHF
 
         private void TickUpdate()
         {
+            // Gather the current state objects into an iterator, as they can
+            // be added and removed during tick callbacks.
+            var stateObjectIterator = gameObjectWorld.StateObjectIterator();
+
             if (Tick == 0)
             {
-                LinkedListNode<StateObject> startNode = gameObjectWorld.StateObjects.First;
-
-                while (startNode != null)
+                foreach (var so in stateObjectIterator)
                 {
-                    if (startNode.Value.IsSceneObject)
-                    {
-                        startNode.Value.TickStart();
-                    }
+                    if (so == null || !so.Spawned)
+                        continue;
 
-                    startNode = startNode.Next;
+                    if (so.IsSceneObject)
+                    {
+                        so.TickStart();
+                    }
                 }
             }
 
-            LinkedListNode<StateObject> node = gameObjectWorld.StateObjects.First;
-
-            while (node != null)
+            foreach (var so in stateObjectIterator)
             {
-                var next = node.Next;
+                if (so == null || !so.Spawned)
+                    continue;
 
-                node.Value.TickUpdate();
-
-                node = next;
+                so.TickUpdate();
             }
         }
 

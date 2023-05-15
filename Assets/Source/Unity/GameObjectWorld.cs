@@ -69,6 +69,33 @@ namespace GLHF
             }
         }
 
+        public T Spawn<T>(T prefab, Scene scene) where T : TickBehaviour
+        {
+            var spawned = Object.Instantiate(prefab);
+            SceneManager.MoveGameObjectToScene(spawned.gameObject, scene);
+
+            Allocate(spawned.Object);
+
+            StateObjects.AddLast(spawned.Object);
+
+            return spawned;
+        }
+
+        public void Despawn(StateObject so)
+        {
+            snapshot.Allocator.Release(so.Ptr);
+
+            StateObjects.Remove(so);
+            Destroy(so);
+        }
+
+        public IEnumerable<StateObject> StateObjectIterator()
+        {
+            var stateObjects = new List<StateObject>(StateObjects);
+
+            return stateObjects;
+        }
+
         private Dictionary<int, StateObject> RetrieveSceneObjects(Scene scene)
         {
             var results = new Dictionary<int, StateObject>();
@@ -112,30 +139,10 @@ namespace GLHF
             Object.Destroy(so.gameObject);
         }
 
-        public T Spawn<T>(T prefab, Scene scene) where T : TickBehaviour
-        {
-            var spawned = Object.Instantiate(prefab);
-            SceneManager.MoveGameObjectToScene(spawned.gameObject, scene);
-
-            Allocate(spawned.Object);
-
-            StateObjects.AddLast(spawned.Object);
-
-            return spawned;
-        }
-
         private void Allocate(StateObject so)
         {
             var ptr = snapshot.Allocator.Allocate(so.Size);
             so.SetPointer(ptr);
-        }
-
-        public void Despawn(StateObject so)
-        {
-            snapshot.Allocator.Release(so.Ptr);
-
-            StateObjects.Remove(so);
-            Destroy(so);
         }
     }
 }
