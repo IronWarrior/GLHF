@@ -62,6 +62,8 @@ namespace GLHF
 
         private Rollback rollback;
         private int forwardTick = -1;
+
+        private int localPlayerIndex;
         #endregion
 
         private Transporter transporter;
@@ -136,15 +138,16 @@ namespace GLHF
 
                 if (Running)
                 {
+                    byte[] data = snapshot.Allocator.ToByteArray(true);
+
                     // TODO: Make a message class for this.
                     ByteBuffer buffer = new ByteBuffer();
                     buffer.Put((byte)MessageType.Start);
                     buffer.Put(0);
                     buffer.Put(PlayerCount);
+                    buffer.Put(peerId);
                     buffer.Put(true);
-                    buffer.Put(Tick);
-
-                    byte[] data = snapshot.Allocator.ToByteArray(true);
+                    buffer.Put(Tick);      
 
                     buffer.Put(data.Length);
                     buffer.Put(data);
@@ -152,9 +155,10 @@ namespace GLHF
                     transporter.Send(peerId, buffer.Data, DeliveryMethod.Reliable);
                 }
             }
-
-            if (Role == RunnerRole.Client)
+            else if (Role == RunnerRole.Client)
+            {
                 Connected = true;
+            }
         }
 
         private void Transport_OnPeerDisconnected(int obj)
@@ -181,6 +185,7 @@ namespace GLHF
                 {
                     int sceneIndex = buffer.Get<int>();
                     PlayerCount = buffer.Get<int>();
+                    localPlayerIndex = buffer.Get<int>();
 
                     bool hasState = buffer.Get<bool>();
 
@@ -217,12 +222,16 @@ namespace GLHF
         {
             Debug.Assert(Role == RunnerRole.Host, "Clients are not permitted to initiate game start.");
 
-            ByteBuffer buffer = new ByteBuffer();
-            buffer.Put((byte)MessageType.Start);
-            buffer.Put(0);
-            buffer.Put(PlayerCount);
+            for (int i = 1; i < PlayerCount; i++)
+            {
+                ByteBuffer buffer = new ByteBuffer();
+                buffer.Put((byte)MessageType.Start);
+                buffer.Put(0);
+                buffer.Put(PlayerCount);
+                buffer.Put(i);
 
-            transporter.SendToAll(buffer.Data, DeliveryMethod.ReliableOrdered);
+                transporter.Send(i - 1, buffer.Data, DeliveryMethod.ReliableOrdered);
+            }
 
             playerJoinEvents = PlayerCount;
 
@@ -302,7 +311,9 @@ namespace GLHF
                 }
                 else
                 {
-                    int nextTickToEnterBuffer = clientSimulation.NextTickToEnter(Tick);
+                    int nextConfirmed = rollback.Confirmed.Tick;
+
+                    int nextTickToEnterBuffer = clientSimulation.NextTickToEnter(nextConfirmed);
 
                     while (unconsumedServerStates.TryDequeue(nextTickToEnterBuffer, out ServerInputMessage message))
                     {
@@ -313,9 +324,12 @@ namespace GLHF
 
                     clientSimulation.Integrate(UnityEngine.Time.time, UnityEngine.Time.deltaTime);
 
-                    while (clientSimulation.TryPop(Tick, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
+                    bool confirmedTickSimulated = false;
+
+                    while (clientSimulation.TryPop(nextConfirmed, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
                     {
-                        // snapshot = rollback.Confirmed;
+                        rollback.PopConfirmedToSnapshot();
+                        RebuildGameObjectWorld();
 
                         Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
 
@@ -327,18 +341,6 @@ namespace GLHF
 
                         TickUpdate();
 
-                        gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
-
-                        foreach (var so in gameObjectWorld.StateObjects)
-                        {
-                            so.SetRunner(this);
-                        }
-
-                        foreach (var so in gameObjectWorld.StateObjects)
-                        {
-                            so.RenderStart();
-                        }
-
                         long checksum = snapshot.Allocator.Checksum();
 
                         if (checksum != serverInputMessage.Checksum)
@@ -348,29 +350,54 @@ namespace GLHF
                             Debug.LogError($"Checksums not equal.");
                         }
 
+                        rollback.ConsumePredictedInput(Tick);
+
                         Tick++;
 
-                        if (PollInput)
+                        nextConfirmed = Tick;
+                        confirmedTickSimulated = true;
+                    }
+
+                    if (confirmedTickSimulated)
+                    {
+                        rollback.PushSnapshotToConfirmed();
+
+                        int targetForwardTick = Tick + clientSimulation.GetPredictedTickCount();
+
+                        RebuildGameObjectWorld();
+
+                        while (Tick < forwardTick)
                         {
-                            int targetForwardTick = Tick + clientSimulation.GetPredictedTickCount();
+                            StateInput input = rollback.GetPredictedInput(Tick);
 
-                            //rollback.CopyToPredicted();
-                            //snapshot = rollback.Predicted;
+                            currentInputs[localPlayerIndex] = input;
 
-                            //gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
-                            //RebuildGameObjectWorld();
+                            TickUpdate();
 
-                            while (forwardTick <= targetForwardTick)
-                            {
-                                ByteBuffer byteBuffer = new ByteBuffer();
-                                ClientInputMessage clientInputMessage = new ClientInputMessage(polledInput, forwardTick);
-                                clientInputMessage.Write(byteBuffer);
-
-                                transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
-
-                                forwardTick++;
-                            }
+                            Tick++;
                         }
+
+                        while (Tick <= targetForwardTick)
+                        {
+                            if (!PollInput)
+                                polledInput = default;
+
+                            rollback.InsertPredictedInput(Tick, polledInput);
+
+                            currentInputs[localPlayerIndex] = polledInput;
+
+                            TickUpdate();
+
+                            var byteBuffer = new ByteBuffer();
+                            var clientInputMessage = new ClientInputMessage(polledInput, Tick);
+                            clientInputMessage.Write(byteBuffer);
+
+                            transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
+
+                            Tick++;
+                        }
+
+                        forwardTick = Tick;
                     }
                 }
 

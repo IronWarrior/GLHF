@@ -51,7 +51,7 @@ namespace GLHF
             }
         }
 
-        public void SetRunner(Runner runner)
+        internal void SetRunner(Runner runner)
         {
             foreach (var tb in tickBehaviours)
             {

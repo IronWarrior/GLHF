@@ -224,9 +224,9 @@ MonoBehaviour:
   clients: 2
   port: 7778
   useLocalTransport: 1
-  useSimulatedLatency: 0
+  useSimulatedLatency: 1
   useDesyncAnalyzer: 1
-  minLatencyMilliseconds: 250
+  minLatencyMilliseconds: 300
   maxLatencyMilliseconds: 300
 --- !u!4 &230635089
 Transform:
@@ -1064,7 +1064,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1603870008
 MonoBehaviour:
   m_ObjectHideFlags: 0

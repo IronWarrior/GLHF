@@ -1,6 +1,6 @@
 namespace GLHF.Transport
 {
-    enum MessageType
+    internal enum MessageType
     {
         Input = 0,
         Start = 1
