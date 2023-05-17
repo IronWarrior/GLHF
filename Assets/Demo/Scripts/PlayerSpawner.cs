@@ -8,9 +8,9 @@ public class PlayerSpawner : TickBehaviour, IPlayerJoined
 
     public void PlayerJoined()
     {
-        int index = Runner.FindObjectsOfType<PlayerPhysics>().Length;
+        int index = Simulation.FindObjectsOfType<PlayerPhysics>().Length;
 
-        var player = Runner.Spawn(playerPrefab, new Vector3(index * 2, 0, 0));
+        var player = Simulation.Spawn(playerPrefab, new Vector3(index * 2, 0, 0));
         player.SetPlayerIndex(index);
     }
 }

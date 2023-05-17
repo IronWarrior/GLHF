@@ -19,14 +19,14 @@ public unsafe class PlayerWeapon : StateBehaviour
 
     public override void TickUpdate()
     {
-        var input = Runner.GetInput(GetComponent<PlayerPhysics>().Player);
+        var input = Simulation.GetInput(GetComponent<PlayerPhysics>().Player);
 
-        if (input.Fire && Runner.Time > LastFireTime + cooldown)
+        if (input.Fire && Simulation.Time > LastFireTime + cooldown)
         {
-            var projectile = Runner.Spawn(projectilePrefab, GetComponent<StateTransform>().Position);
+            var projectile = Simulation.Spawn(projectilePrefab, GetComponent<StateTransform>().Position);
             projectile.Direction = new Vector3(1, 0, 0);
 
-            LastFireTime = Runner.Time;
+            LastFireTime = Simulation.Time;
         }
     }
 }

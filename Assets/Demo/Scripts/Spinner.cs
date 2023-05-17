@@ -16,7 +16,7 @@ public unsafe class Spinner : StateBehaviour
 
     public override void TickUpdate()
     {
-        Angle += speed * Runner.DeltaTime;
+        Angle += speed * Simulation.DeltaTime;
 
         if (Angle > 360)
             Angle -= 360;

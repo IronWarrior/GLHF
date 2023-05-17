@@ -7,6 +7,8 @@ namespace GLHF
         public Snapshot Snapshot { get; private set; }
         public Snapshot Confirmed { get; private set; }
 
+        public int ForwardTick { get; set; } = -1;
+
         private readonly Dictionary<int, StateInput> predictedInputs = new();
 
         public Rollback(Snapshot snapshot)

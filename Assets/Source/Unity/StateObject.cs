@@ -51,11 +51,13 @@ namespace GLHF
             }
         }
 
-        internal void SetRunner(Runner runner)
+        internal void SetSimulation(Simulation simulation)
         {
+            Simulation = simulation;
+
             foreach (var tb in tickBehaviours)
             {
-                tb.Runner = runner;
+                tb.Simulation = Simulation;
             }
 
             foreach (var tb in tickBehaviours)

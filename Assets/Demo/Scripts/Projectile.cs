@@ -25,16 +25,16 @@ public unsafe class Projectile : StateBehaviour
 
     public override void TickStart()
     {
-        LifetimeStart = Runner.Time;
+        LifetimeStart = Simulation.Time;
     }
 
     public override void TickUpdate()
     {
-        GetComponent<StateTransform>().Position += speed * Direction * Runner.DeltaTime;
+        GetComponent<StateTransform>().Position += speed * Direction * Simulation.DeltaTime;
 
-        if (Runner.Time > LifetimeStart + lifetime)
+        if (Simulation.Time > LifetimeStart + lifetime)
         {
-            Runner.Despawn(Object);
+            Simulation.Despawn(Object);
         }
     }
 }

@@ -4,7 +4,7 @@ namespace GLHF
 {
     public abstract class TickBehaviour : MonoBehaviour
     {
-        public Runner Runner { get; set; }
+        public Simulation Simulation { get; set; }
         public StateObject Object { get; set; }
 
         public virtual void Initialized() { }

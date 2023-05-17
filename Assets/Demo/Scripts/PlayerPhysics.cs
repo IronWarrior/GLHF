@@ -29,7 +29,7 @@ public unsafe class PlayerPhysics : StateBehaviour
 
     public override void Initialized()
     {
-        Runner.OnPollInput = OnPollInput;
+        // Runner.OnPollInput = OnPollInput;
     }
 
     private StateInput OnPollInput()
@@ -45,11 +45,11 @@ public unsafe class PlayerPhysics : StateBehaviour
 
     public override void TickUpdate()
     {
-        StateInput input = Runner.GetInput(Player);
+        StateInput input = Simulation.GetInput(Player);
 
         var t = GetComponent<StateTransform>();
 
-        t.Position += speed * input.MoveDirection * Runner.DeltaTime;
+        t.Position += speed * input.MoveDirection * Simulation.DeltaTime;
     }
 
     public void SetPlayerIndex(int index)

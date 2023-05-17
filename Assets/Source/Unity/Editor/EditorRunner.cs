@@ -38,7 +38,7 @@ namespace GLHF.Editor
                 {
                     if (runner.Running)
                     {
-                        GUILayout.Label($"Tick: {runner.Tick}");
+                        GUILayout.Label($"Tick: {runner.Simulation.Tick}");
                         GUILayout.Label($"Message Next Tick: {runner.NextTick()}");
                         GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
                         GUILayout.Label($"Current Delay: {runner.MessageBufferDelay()}");

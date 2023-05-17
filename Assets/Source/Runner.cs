@@ -17,14 +17,13 @@ namespace GLHF
     {
         public bool PollInput { get; set; } = true;
 
-        public int Tick
-        {
-            get => snapshot.Tick;
-            set => snapshot.Tick = value;
-        }
+        //public int Tick
+        //{
+        //    get => snapshot.Tick;
+        //    set => snapshot.Tick = value;
+        //}
 
         public float DeltaTime { get; private set; }
-        public float Time => Tick * DeltaTime;
 
         public bool Connected { get; private set; }
         public bool Running { get; private set; }
@@ -39,11 +38,11 @@ namespace GLHF
 
         public Func<StateInput> OnPollInput;
 
+        public Simulation Simulation { get; private set; }
+
         private float deltaTimeAccumulated;
 
-        private GameObjectWorld gameObjectWorld;
-
-        public Snapshot snapshot;
+        // public Snapshot snapshot;
         public event Action<Snapshot> OnSimulateTick;
 
         private List<StateInput> currentInputs = new List<StateInput>();
@@ -61,7 +60,6 @@ namespace GLHF
         private OrderedMessageBuffer<ServerInputMessage> unconsumedServerStates;
 
         private Rollback rollback;
-        private int forwardTick = -1;
 
         private int localPlayerIndex;
         #endregion
@@ -130,7 +128,7 @@ namespace GLHF
         {
             if (Role == RunnerRole.Host)
             {
-                clientInputBuffers.Add(new ClientInputBuffer(Running ? Tick : 0));
+                clientInputBuffers.Add(new ClientInputBuffer(Running ? Simulation.Tick : 0));
                 currentInputs.Add(default);
                 PlayerCount++;
 
@@ -138,7 +136,7 @@ namespace GLHF
 
                 if (Running)
                 {
-                    byte[] data = snapshot.Allocator.ToByteArray(true);
+                    byte[] data = Simulation.Snapshot.Allocator.ToByteArray(true);
 
                     // TODO: Make a message class for this.
                     ByteBuffer buffer = new ByteBuffer();
@@ -147,7 +145,7 @@ namespace GLHF
                     buffer.Put(PlayerCount);
                     buffer.Put(peerId);
                     buffer.Put(true);
-                    buffer.Put(Tick);      
+                    buffer.Put(Simulation.Tick);      
 
                     buffer.Put(data.Length);
                     buffer.Put(data);
@@ -177,7 +175,7 @@ namespace GLHF
 
                 ClientInputMessage message = new ClientInputMessage(buffer);
 
-                clientInputBuffers[id].Insert(message, Tick, DeltaTime - deltaTimeAccumulated, DeltaTime);
+                clientInputBuffers[id].Insert(message, Simulation.Tick, DeltaTime - deltaTimeAccumulated, DeltaTime);
             }
             else
             {
@@ -199,11 +197,11 @@ namespace GLHF
 
                         OnComplete = () =>
                         {
-                            Tick = tick;
-                            forwardTick = tick;
-                            clientSimulation.SetConfirmedTime(Tick * DeltaTime);
-                            snapshot.Allocator.CopyFrom(state);
-                            gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
+                            Simulation.Tick = tick;
+                            rollback.ForwardTick = tick;
+                            clientSimulation.SetConfirmedTime(Simulation.Tick * DeltaTime);
+                            Simulation.Snapshot.Allocator.CopyFrom(state);
+                            Simulation.RebuildGameObjectWorld();
                         };
                     }
 
@@ -277,7 +275,7 @@ namespace GLHF
                     {
                         deltaTimeAccumulated -= DeltaTime;
 
-                        // currentInputs[0] = polledInput;
+                        currentInputs[0] = polledInput;
 
                         for (int i = 0; i < clientInputBuffers.Count; i++)
                         {
@@ -287,26 +285,26 @@ namespace GLHF
                             }
                         }
 
-                        TickEvents();
+                        var inputs = new Simulation.Inputs()
+                        {
+                            PlayerJoinEvents = playerJoinEvents,
+                            StateInputs = currentInputs.ToArray()
+                        };
 
-                        TickUpdate();
+                        Simulation.Integrate(inputs, out long checksum);
 
-                        OnSimulateTick?.Invoke(snapshot);
-
-                        long checksum = snapshot.Allocator.Checksum();
+                        OnSimulateTick?.Invoke(Simulation.Snapshot);
 
                         for (int i = 0; i < clientInputBuffers.Count; i++)
                         {
-                            ByteBuffer byteBuffer = new ByteBuffer();
-                            ServerInputMessage serverInputMessage = new ServerInputMessage(currentInputs, Tick, checksum, playerJoinEvents, clientInputBuffers[i].Error);
+                            var byteBuffer = new ByteBuffer();
+                            var serverInputMessage = new ServerInputMessage(currentInputs, Simulation.Tick - 1, checksum, playerJoinEvents, clientInputBuffers[i].Error);
                             serverInputMessage.Write(byteBuffer);
 
                             transporter.Send(i, byteBuffer.Data, DeliveryMethod.Reliable);
                         }
 
                         playerJoinEvents = 0;
-
-                        Tick++;
                     }
                 }
                 else
@@ -325,86 +323,90 @@ namespace GLHF
                     clientSimulation.Integrate(UnityEngine.Time.time, UnityEngine.Time.deltaTime);
 
                     bool confirmedTickSimulated = false;
-
+                    
                     while (clientSimulation.TryPop(nextConfirmed, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
                     {
                         rollback.PopConfirmedToSnapshot();
-                        RebuildGameObjectWorld();
+                        Simulation.RebuildGameObjectWorld();
 
-                        Debug.Assert(serverInputMessage.Tick == Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Tick}.");
+                        Debug.Assert(serverInputMessage.Tick == Simulation.Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Simulation.Tick}.");
 
                         currentInputs = serverInputMessage.Inputs;
 
                         playerJoinEvents = serverInputMessage.NewPlayersJoining;
 
-                        TickEvents();
-
-                        TickUpdate();
-
-                        long checksum = snapshot.Allocator.Checksum();
+                        var inputs = new Simulation.Inputs()
+                        {
+                            PlayerJoinEvents = playerJoinEvents,
+                            StateInputs = currentInputs.ToArray()
+                        };
+                        
+                        Simulation.Integrate(inputs, out long checksum);
 
                         if (checksum != serverInputMessage.Checksum)
                         {
-                            OnDesync?.Invoke(snapshot);
+                            OnDesync?.Invoke(Simulation.Snapshot);
 
                             Debug.LogError($"Checksums not equal.");
                         }
 
-                        rollback.ConsumePredictedInput(Tick);
+                        rollback.ConsumePredictedInput(Simulation.Tick - 1);
 
-                        Tick++;
-
-                        nextConfirmed = Tick;
+                        nextConfirmed = Simulation.Tick;
                         confirmedTickSimulated = true;
                     }
-
+                    
                     if (confirmedTickSimulated)
                     {
                         rollback.PushSnapshotToConfirmed();
+                        Simulation.RebuildGameObjectWorld();
 
-                        int targetForwardTick = Tick + clientSimulation.GetPredictedTickCount();
+                        int targetForwardTick = Simulation.Tick + clientSimulation.GetPredictedTickCount();
 
-                        RebuildGameObjectWorld();
-
-                        while (Tick < forwardTick)
+                        while (Simulation.Tick < rollback.ForwardTick)
                         {
-                            StateInput input = rollback.GetPredictedInput(Tick);
+                            StateInput input = rollback.GetPredictedInput(Simulation.Tick);
 
                             currentInputs[localPlayerIndex] = input;
 
-                            TickUpdate();
+                            var inputs = new Simulation.Inputs()
+                            {
+                                PlayerJoinEvents = playerJoinEvents,
+                                StateInputs = currentInputs.ToArray()
+                            };
 
-                            Tick++;
+                            Simulation.Integrate(inputs, out _);
                         }
 
-                        while (Tick <= targetForwardTick)
+                        while (Simulation.Tick <= targetForwardTick)
                         {
                             if (!PollInput)
                                 polledInput = default;
-
-                            rollback.InsertPredictedInput(Tick, polledInput);
+                            
+                            rollback.InsertPredictedInput(Simulation.Tick, polledInput);
 
                             currentInputs[localPlayerIndex] = polledInput;
 
-                            TickUpdate();
+                            var inputs = new Simulation.Inputs()
+                            {
+                                PlayerJoinEvents = playerJoinEvents,
+                                StateInputs = currentInputs.ToArray()
+                            };
+
+                            Simulation.Integrate(inputs, out _);
 
                             var byteBuffer = new ByteBuffer();
-                            var clientInputMessage = new ClientInputMessage(polledInput, Tick);
+                            var clientInputMessage = new ClientInputMessage(polledInput, Simulation.Tick - 1);
                             clientInputMessage.Write(byteBuffer);
 
                             transporter.SendToAll(byteBuffer.Data, DeliveryMethod.Reliable);
-
-                            Tick++;
                         }
 
-                        forwardTick = Tick;
+                        rollback.ForwardTick = Simulation.Tick;
                     }
                 }
 
-                foreach (var so in gameObjectWorld.StateObjects)
-                {
-                    so.Render();
-                }
+                Simulation.Render();
             }
         }
 
@@ -413,166 +415,18 @@ namespace GLHF
             Running = true;
 
             var allocator = new Allocator(1024);
-            snapshot = new Snapshot(allocator);
+            var snapshot = new Snapshot(allocator);
 
-            gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
-            gameObjectWorld.BuildFromStateObjects(FindObjectsOfType<StateObject>());
+            var gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
+
+            Simulation = new Simulation(snapshot, DeltaTime, Scene, gameObjectWorld, localPlayerIndex);
+            gameObjectWorld.BuildFromStateObjects(Simulation.FindObjectsOfType<StateObject>());
+            
+            Simulation.RebuildGameObjectWorld();
 
             if (Role == RunnerRole.Client)
-            {
                 rollback = new Rollback(snapshot);
-            }
-
-            foreach (var so in gameObjectWorld.StateObjects)
-            {
-                so.SetRunner(this);
-            }
-
-            foreach (var so in gameObjectWorld.StateObjects)
-            {
-                so.RenderStart();
-            }
         }
-
-        // TODO: Right now, the only event is new players joining. Extend to
-        // allow for generic gameplay events.
-        private void TickEvents()
-        {
-            if (playerJoinEvents > 0)
-            {
-                var joineds = FindObjectsOfType<IPlayerJoined>();
-
-                for (int i = 0; i < playerJoinEvents; i++)
-                {
-                    foreach (var joined in joineds)
-                    {
-                        joined.PlayerJoined();
-                    }
-                }
-            }
-        }
-
-        private void TickUpdate()
-        {
-            // Gather the current state objects into an iterator, as they can
-            // be added and removed during tick callbacks.
-            var stateObjectIterator = gameObjectWorld.StateObjectIterator();
-
-            if (Tick == 0)
-            {
-                foreach (var so in stateObjectIterator)
-                {
-                    if (so == null || !so.Spawned)
-                        continue;
-
-                    if (so.IsSceneObject)
-                    {
-                        so.TickStart();
-                    }
-                }
-            }
-
-            foreach (var so in stateObjectIterator)
-            {
-                if (so == null || !so.Spawned)
-                    continue;
-
-                so.TickUpdate();
-            }
-        }
-
-        #region Simulation Public Methods
-        public T Spawn<T>(T prefab, Vector3 position) where T : TickBehaviour
-        {
-            var spawned = gameObjectWorld.Spawn(prefab, Scene);
-
-            spawned.Object.SetRunner(this);
-
-            if (spawned.TryGetComponent<StateTransform>(out var t))
-            {
-                t.Position = position;
-            }
-
-            spawned.Object.TickStart();
-            spawned.Object.RenderStart();
-
-            return spawned;
-        }
-
-        public void Despawn(StateObject so)
-        {
-            so.TickDestroy();
-
-            gameObjectWorld.Despawn(so);
-        }
-
-        public StateInput GetInput(int index)
-        {
-            if (index < currentInputs.Count)
-                return currentInputs[index];
-            else
-                return default;
-        }
-
-        public void SetState(Allocator source)
-        {
-            snapshot.Allocator.CopyFrom(source);
-
-            RebuildGameObjectWorld();
-        }
-
-        private void RebuildGameObjectWorld()
-        {
-            gameObjectWorld.BuildFromSnapshot(snapshot, Scene);
-
-            foreach (var so in gameObjectWorld.StateObjects)
-            {
-                so.SetRunner(this);
-            }
-
-            foreach (var so in gameObjectWorld.StateObjects)
-            {
-                so.RenderStart();
-            }
-        }
-
-        public new T FindObjectOfType<T>() where T : class
-        {
-            GameObject[] roots = Scene.GetRootGameObjects();
-
-            foreach (var root in roots)
-            {
-                if (root.activeSelf != true)
-                    continue;
-
-                var result = root.GetComponentInChildren<T>();
-
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
-            return null;
-        }
-
-        public new T[] FindObjectsOfType<T>() where T : class
-        {
-            List<T> results = new List<T>();
-
-            GameObject[] roots = Scene.GetRootGameObjects();
-
-            foreach (var root in roots)
-            {
-                if (root.activeSelf != true)
-                    continue;
-
-                results.AddRange(root.GetComponentsInChildren<T>());
-            }
-
-            return results.ToArray();
-        }
-        #endregion
 
         #region Debug
         public int MessageBufferCount()
