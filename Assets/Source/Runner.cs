@@ -269,7 +269,7 @@ namespace GLHF
 
                 if (Role == RunnerRole.Host)
                 {
-                    deltaTimeAccumulated += UnityEngine.Time.deltaTime;
+                    deltaTimeAccumulated += Time.deltaTime;
 
                     while (deltaTimeAccumulated > DeltaTime)
                     {
@@ -315,16 +315,16 @@ namespace GLHF
 
                     while (unconsumedServerStates.TryDequeue(nextTickToEnterBuffer, out ServerInputMessage message))
                     {
-                        clientSimulation.Insert(message, UnityEngine.Time.time);
+                        clientSimulation.Insert(message, Time.time);
 
                         nextTickToEnterBuffer++;
                     }
 
-                    clientSimulation.Integrate(UnityEngine.Time.time, UnityEngine.Time.deltaTime);
+                    clientSimulation.Integrate(Time.time, Time.deltaTime);
 
                     bool confirmedTickSimulated = false;
                     
-                    while (clientSimulation.TryPop(nextConfirmed, UnityEngine.Time.time, out ServerInputMessage serverInputMessage))
+                    while (clientSimulation.TryPop(nextConfirmed, Time.time, out ServerInputMessage serverInputMessage))
                     {
                         rollback.PopConfirmedToSnapshot();
                         Simulation.RebuildGameObjectWorld();
