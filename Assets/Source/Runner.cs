@@ -26,7 +26,13 @@ namespace GLHF
 
         public RunnerRole Role { get; private set; }
 
-        public enum RunnerRole { None, Host, Client }
+        public enum RunnerRole
+        {
+            None = 0,
+            Server = 1,
+            Host = 2,
+            Client = 3
+        }
 
         public Simulation Simulation { get; private set; }
 

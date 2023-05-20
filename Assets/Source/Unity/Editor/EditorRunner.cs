@@ -43,13 +43,6 @@ namespace GLHF.Editor
                     if (runner.Running)
                     {                        
                         GUILayout.Label($"Predicted Ticks: {diagnostics.PredictedTickCount}");
-                        //GUILayout.Label($"Message Next Tick: {runner.NextTick()}");
-                        //GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
-                        //GUILayout.Label($"Current Delay: {runner.MessageBufferDelay()}");
-                        //GUILayout.Label($"Current Error: {runner.CurrentBufferError()}");
-                        //GUILayout.Label($"Target Delay: {runner.TargetBufferDelay()}");
-                        //GUILayout.Label($"Rtt: {runner.Ping() * 1000:F2}");
-                        //GUILayout.Label($"Timescale: {runner.Timescale():F2}");
                     }
                     else
                     {
@@ -59,11 +52,6 @@ namespace GLHF.Editor
                 else
                 {
                     GUILayout.Label($"Players: {runner.PlayerCount}");
-
-                    if (runner.Running)
-                    {
-                        // GUILayout.Label($"Client Input Buffer Count: {runner.ClientInputBufferCount()}");
-                    }
                 }
             }
         }
