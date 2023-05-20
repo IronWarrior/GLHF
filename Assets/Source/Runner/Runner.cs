@@ -131,8 +131,8 @@ namespace GLHF
             {
                 clientInputBuffers.Add(new ClientInputBuffer(Running ? Simulation.Tick : 0));
                 currentInputs.Add(default);
-                PlayerCount++;
 
+                PlayerCount++;
                 playerJoinEvents++;
 
                 if (Running)
