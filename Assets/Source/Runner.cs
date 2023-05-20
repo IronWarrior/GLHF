@@ -30,9 +30,6 @@ namespace GLHF
 
         public Simulation Simulation { get; private set; }
 
-        private float deltaTimeAccumulated;
-
-        // public Snapshot snapshot;
         public event Action<Snapshot> OnSimulateTick;
 
         private List<StateInput> currentInputs = new List<StateInput>();
@@ -40,6 +37,7 @@ namespace GLHF
 
         #region Server
         private List<ClientInputBuffer> clientInputBuffers;
+        private float deltaTimeAccumulated;
         #endregion
 
         // TODO: Things that are client or server specific should be encapsulated.
@@ -341,8 +339,11 @@ namespace GLHF
                     
                     while (clientSimulation.TryPop(nextConfirmed, Time.time, out ServerInputMessage serverInputMessage))
                     {
-                        rollback.PopConfirmedToSnapshot();
-                        Simulation.RebuildGameObjectWorld();
+                        if (!confirmedTickSimulated)
+                        {
+                            rollback.PopConfirmedToSnapshot();
+                            Simulation.RebuildGameObjectWorld();
+                        }
 
                         Debug.Assert(serverInputMessage.Tick == Simulation.Tick, $"Attempting to use inputs from server tick {serverInputMessage.Tick} while client is on tick {Simulation.Tick}.");
 
@@ -424,72 +425,23 @@ namespace GLHF
                 Simulation.Render();
             }
         }
-
-        #region Debug
-        public int MessageBufferCount()
+        
+        #region Diagnostics
+        public struct Diagnostics
         {
-            return 0;
-
-            Debug.Assert(Role == RunnerRole.Client);
-
-            //return pendingServerStates.Size;
+            public int PredictedTickCount;
         }
 
-        public float MessageBufferDelay()
+        public Diagnostics GetDiagnostics()
         {
-            return 0;
+            Diagnostics diagnostics = new();
 
-            Debug.Assert(Role == RunnerRole.Client);
+            if (Role == RunnerRole.Client)
+            {
+                diagnostics.PredictedTickCount = clientSimulation.GetPredictedTickCount();
+            }
 
-            //return pendingServerStates.CurrentDelay(DeltaTime, UnityEngine.Time.time, playbackTime);
-        }
-
-        public float TargetBufferDelay()
-        {
-            return 0;
-
-            Debug.Assert(Role == RunnerRole.Client);
-
-            //return pendingServerStates.TargetDelay();
-        }
-
-        public float CurrentBufferError()
-        {
-            return 0;
-
-            Debug.Assert(Role == RunnerRole.Client);
-
-            //return pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime);
-        }
-
-        public int NextTick()
-        {
-            Debug.Assert(Role == RunnerRole.Client);
-
-            return 0;
-
-            //return pendingServerStates.OldestTick;
-        }
-
-        public float Ping()
-        {
-            Debug.Assert(Role == RunnerRole.Client);
-
-            return 0;
-        }
-
-        public float Timescale()
-        {
-            return 0;
-
-            //return config.JitterTimescale.CalculateTimescale(pendingServerStates.CalculateError(DeltaTime, UnityEngine.Time.time, playbackTime));
-        }
-
-        public int ClientInputBufferCount()
-        {
-            Debug.Assert(Role == RunnerRole.Host);
-
-            return clientInputBuffers[0].Size;
+            return diagnostics;
         }
         #endregion
     }

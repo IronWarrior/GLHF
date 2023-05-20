@@ -34,18 +34,22 @@ namespace GLHF.Editor
 
             if (Application.isPlaying)
             {
+                // GUILayout.Label($"Tick: {runner.Simulation.Tick}");
+
+                Runner.Diagnostics diagnostics = runner.GetDiagnostics();
+
                 if (runner.Role == Runner.RunnerRole.Client)
                 {
                     if (runner.Running)
-                    {
-                        GUILayout.Label($"Tick: {runner.Simulation.Tick}");
-                        GUILayout.Label($"Message Next Tick: {runner.NextTick()}");
-                        GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
-                        GUILayout.Label($"Current Delay: {runner.MessageBufferDelay()}");
-                        GUILayout.Label($"Current Error: {runner.CurrentBufferError()}");
-                        GUILayout.Label($"Target Delay: {runner.TargetBufferDelay()}");
-                        GUILayout.Label($"Rtt: {runner.Ping() * 1000:F2}");
-                        GUILayout.Label($"Timescale: {runner.Timescale():F2}");
+                    {                        
+                        GUILayout.Label($"Predicted Ticks: {diagnostics.PredictedTickCount}");
+                        //GUILayout.Label($"Message Next Tick: {runner.NextTick()}");
+                        //GUILayout.Label($"Message Buffer Count: {runner.MessageBufferCount()}");
+                        //GUILayout.Label($"Current Delay: {runner.MessageBufferDelay()}");
+                        //GUILayout.Label($"Current Error: {runner.CurrentBufferError()}");
+                        //GUILayout.Label($"Target Delay: {runner.TargetBufferDelay()}");
+                        //GUILayout.Label($"Rtt: {runner.Ping() * 1000:F2}");
+                        //GUILayout.Label($"Timescale: {runner.Timescale():F2}");
                     }
                     else
                     {
@@ -58,7 +62,7 @@ namespace GLHF.Editor
 
                     if (runner.Running)
                     {
-                        GUILayout.Label($"Client Input Buffer Count: {runner.ClientInputBufferCount()}");
+                        // GUILayout.Label($"Client Input Buffer Count: {runner.ClientInputBufferCount()}");
                     }
                 }
             }

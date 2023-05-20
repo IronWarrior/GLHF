@@ -39,6 +39,13 @@ namespace GLHF.Dev
 
         private void OnGUI()
         {
+            if (truth == null || truth.Allocator.Head == null)
+            {
+                GUILayout.Label("Snapshots not initialized.");
+
+                return;
+            }
+
             scrollPosition = GUILayout.BeginScrollView(scrollPosition);
             GUILayout.BeginHorizontal();
 

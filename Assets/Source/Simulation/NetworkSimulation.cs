@@ -3,7 +3,7 @@ using UnityEngine;
 namespace GLHF.Network
 {
     public class NetworkSimulation
-    {
+    {            
         private readonly float deltaTime;
         private readonly JitterTimescale jitterTimescale;
         private readonly MessageBuffer<ServerInputMessage> states;

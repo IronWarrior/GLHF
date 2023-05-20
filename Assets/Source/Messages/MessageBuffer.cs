@@ -73,7 +73,7 @@ namespace GLHF
             {
                 if (OldestTick < tick)
                 {
-                    throw new System.Exception($"Requesting tick {tick}, indiciating message buffer's next tick {OldestTick} has been skipped.");
+                    throw new System.Exception($"Requesting tick {tick}, indicating message buffer's next tick {OldestTick} has been skipped.");
                 }
                 else if (OldestTick == tick && playbackTime >= tick * deltaTime)
                 {
