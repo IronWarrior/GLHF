@@ -90,7 +90,8 @@ namespace GLHF
         {
             if (currentInputs.PlayerJoinEvents > 0)
             {
-                var joineds = FindObjectsOfType<IPlayerJoined>();
+                // TODO: Will need to loop through a deterministic ordering of the scene objects.
+                var joineds = Scene.FindObjectsOfType<IPlayerJoined>();
 
                 for (int i = 0; i < currentInputs.PlayerJoinEvents; i++)
                 {
@@ -161,43 +162,6 @@ namespace GLHF
                 return currentInputs.StateInputs[playerIndex];
             else
                 return default;
-        }
-
-        public T FindObjectOfType<T>() where T : class
-        {
-            GameObject[] roots = Scene.GetRootGameObjects();
-
-            foreach (var root in roots)
-            {
-                if (root.activeSelf != true)
-                    continue;
-
-                var result = root.GetComponentInChildren<T>();
-
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
-            return null;
-        }
-
-        public T[] FindObjectsOfType<T>() where T : class
-        {
-            List<T> results = new List<T>();
-
-            GameObject[] roots = Scene.GetRootGameObjects();
-
-            foreach (var root in roots)
-            {
-                if (root.activeSelf != true)
-                    continue;
-
-                results.AddRange(root.GetComponentsInChildren<T>());
-            }
-
-            return results.ToArray();
         }
     }
 }

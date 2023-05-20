@@ -261,7 +261,7 @@ namespace GLHF
             var gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
 
             Simulation = new Simulation(snapshot, DeltaTime, Scene, gameObjectWorld, localPlayerIndex);
-            gameObjectWorld.BuildFromStateObjects(Simulation.FindObjectsOfType<StateObject>());
+            gameObjectWorld.BuildFromStateObjects(Scene.FindObjectsOfType<StateObject>());
 
             Simulation.RebuildGameObjectWorld();
 
