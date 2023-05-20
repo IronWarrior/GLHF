@@ -8,20 +8,12 @@ using UnityEngine;
 namespace GLHF
 {
     /// <summary>
-    /// Manages connections between players, the tick based simulation,
-    /// and is interacted with by game object behaviours to spawn and despawn objects.
-    /// TODO: Should decouple all three of the above into separate modules.
-    /// Can probably also split the simulation bits into Host and Client.
+    /// Manages connections between players and ticks the simulation.
+    /// Can probably split the simulation bits into Host and Client.
     /// </summary>
     public unsafe class Runner : MonoBehaviour
     {
         public bool PollInput { get; set; } = true;
-
-        //public int Tick
-        //{
-        //    get => snapshot.Tick;
-        //    set => snapshot.Tick = value;
-        //}
 
         public float DeltaTime { get; private set; }
 
@@ -35,8 +27,6 @@ namespace GLHF
         public RunnerRole Role { get; private set; }
 
         public enum RunnerRole { None, Host, Client }
-
-        public Func<StateInput> OnPollInput;
 
         public Simulation Simulation { get; private set; }
 
@@ -66,6 +56,13 @@ namespace GLHF
 
         private Transporter transporter;
         private Config config;
+
+        private IInputHandler inputHandler;
+
+        private void Start()
+        {
+            inputHandler = GetComponent<IInputHandler>();
+        }
 
         #region Connection Methods
         public void Host(int port, Config config, Transporter transporter)
@@ -253,6 +250,24 @@ namespace GLHF
 
             OnComplete?.Invoke();
         }
+
+        private void StartRunning()
+        {
+            Running = true;
+
+            var allocator = new Allocator(1024);
+            var snapshot = new Snapshot(allocator);
+
+            var gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
+
+            Simulation = new Simulation(snapshot, DeltaTime, Scene, gameObjectWorld, localPlayerIndex);
+            gameObjectWorld.BuildFromStateObjects(Simulation.FindObjectsOfType<StateObject>());
+
+            Simulation.RebuildGameObjectWorld();
+
+            if (Role == RunnerRole.Client)
+                rollback = new Rollback(snapshot);
+        }
         #endregion
 
         private void Update()
@@ -264,8 +279,8 @@ namespace GLHF
             {
                 StateInput polledInput = default;
 
-                if (PollInput && OnPollInput != null)
-                    polledInput = OnPollInput();
+                if (PollInput)
+                    polledInput = inputHandler.GetInput();
 
                 if (Role == RunnerRole.Host)
                 {
@@ -408,24 +423,6 @@ namespace GLHF
 
                 Simulation.Render();
             }
-        }
-
-        private void StartRunning()
-        {
-            Running = true;
-
-            var allocator = new Allocator(1024);
-            var snapshot = new Snapshot(allocator);
-
-            var gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
-
-            Simulation = new Simulation(snapshot, DeltaTime, Scene, gameObjectWorld, localPlayerIndex);
-            gameObjectWorld.BuildFromStateObjects(Simulation.FindObjectsOfType<StateObject>());
-            
-            Simulation.RebuildGameObjectWorld();
-
-            if (Role == RunnerRole.Client)
-                rollback = new Rollback(snapshot);
         }
 
         #region Debug

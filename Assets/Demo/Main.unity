@@ -221,13 +221,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 041163e14507885418a5f79115eab73c, type: 2}
+  runnerPrefab: {fileID: 7147567346443839536, guid: 006616d89fdb25f43a2184928766bd8b, type: 3}
   clients: 2
   port: 7778
   useLocalTransport: 1
   useSimulatedLatency: 1
   useDesyncAnalyzer: 1
-  minLatencyMilliseconds: 300
-  maxLatencyMilliseconds: 300
+  minLatencyMilliseconds: 60
+  maxLatencyMilliseconds: 60
 --- !u!4 &230635089
 Transform:
   m_ObjectHideFlags: 0

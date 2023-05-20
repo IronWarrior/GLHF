@@ -12,6 +12,9 @@ namespace GLHF
         Config config;
 
         [SerializeField]
+        Runner runnerPrefab;
+
+        [SerializeField]
         int clients = 1;
 
         [SerializeField]
@@ -123,9 +126,9 @@ namespace GLHF
 
         private void BuildRunner(out Runner runner, out Transporter transporter)
         {
-            runner = new GameObject().AddComponent<Runner>();
+            runner = Instantiate(runnerPrefab);
             
-            ITransport transport = useLocalTransport ? (ITransport)new TransportLocal() : new TransportLiteNetLib();
+            ITransport transport = useLocalTransport ? new TransportLocal() : new TransportLiteNetLib();
             transporter = new Transporter(transport);
 
             if (useSimulatedLatency)

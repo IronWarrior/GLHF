@@ -14,35 +14,6 @@ public unsafe class PlayerPhysics : StateBehaviour
 
     public override int Size => sizeof(bool) + sizeof(int);
 
-    private InputActions actions;
-
-    private void Awake()
-    {
-        actions = new InputActions();
-        actions.Enable();
-    }
-
-    private void OnDestroy()
-    {
-        actions.Dispose();
-    }
-
-    public override void Initialized()
-    {
-        // Runner.OnPollInput = OnPollInput;
-    }
-
-    private StateInput OnPollInput()
-    {
-        StateInput input = new StateInput();
-
-        var moveInput = actions.Default.Move.ReadValue<Vector2>();
-        input.MoveDirection = new Vector3(moveInput.x, 0, moveInput.y);
-        input.Fire = actions.Default.Fire.ReadValue<float>() > 0.5f;
-
-        return input;
-    }
-
     public override void TickUpdate()
     {
         StateInput input = Simulation.GetInput(Player);
