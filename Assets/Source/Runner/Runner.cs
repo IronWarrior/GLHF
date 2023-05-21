@@ -144,7 +144,7 @@ namespace GLHF
                     buffer.Put((byte)MessageType.Start);
                     buffer.Put(0);
                     buffer.Put(PlayerCount);
-                    buffer.Put(peerId);
+                    buffer.Put(peerId + 1);
                     buffer.Put(true);
                     buffer.Put(Simulation.Tick);      
 
@@ -203,6 +203,7 @@ namespace GLHF
                             clientSimulation.SetConfirmedTime(Simulation.Tick * DeltaTime);
                             Simulation.Snapshot.Allocator.CopyFrom(state);
                             Simulation.RebuildGameObjectWorld();
+                            rollback.PushSnapshotToConfirmed();
                         };
                     }
 

@@ -34,7 +34,7 @@ namespace GLHF.Editor
 
             if (Application.isPlaying)
             {
-                // GUILayout.Label($"Tick: {runner.Simulation.Tick}");
+                GUILayout.Label($"Tick: {runner.Simulation.Tick}");
 
                 Runner.Diagnostics diagnostics = runner.GetDiagnostics();
 

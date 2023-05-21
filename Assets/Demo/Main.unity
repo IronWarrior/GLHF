@@ -154,7 +154,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 041163e14507885418a5f79115eab73c, type: 2}
   runnerPrefab: {fileID: 7147567346443839536, guid: 006616d89fdb25f43a2184928766bd8b, type: 3}
-  clients: 2
+  clients: 1
   port: 7778
   useLocalTransport: 1
   useSimulatedLatency: 1
@@ -203,7 +203,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_BackGroundColor: {r: 0.2264151, g: 0.2264151, b: 0.2264151, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -365,7 +365,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1147295152
 MonoBehaviour:
   m_ObjectHideFlags: 0
