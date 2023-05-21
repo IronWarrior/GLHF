@@ -6,19 +6,18 @@ namespace GLHF
 {
     public unsafe class GameObjectWorld
     {
-        public LinkedList<StateObject> StateObjects { get; private set; }
+        public LinkedList<StateObject> StateObjects { get; private set; } = new LinkedList<StateObject>();
 
         private readonly Dictionary<int, StateObject> prefabTable;
+        private readonly Scene scene;
 
         private Snapshot snapshot;
 
-        public GameObjectWorld(Snapshot snapshot, Dictionary<int, StateObject> prefabTable)
+        public GameObjectWorld(Snapshot snapshot, Scene scene, Dictionary<int, StateObject> prefabTable)
         {
             this.prefabTable = prefabTable;
-
-            StateObjects = new LinkedList<StateObject>();
-            
-            this.snapshot = snapshot;
+            this.scene = scene;
+            this.snapshot = snapshot;         
         }
 
         public void BuildFromStateObjects(IEnumerable<StateObject> stateObjects)
@@ -35,7 +34,7 @@ namespace GLHF
         /// Rebuilds the game object and monobehaviour representing of the world in the
         /// current snapshot.
         /// </summary>
-        public void BuildFromSnapshot(Snapshot snapshot, Scene scene)
+        public void BuildFromSnapshot(Snapshot snapshot)
         {
             this.snapshot = snapshot;
 
@@ -47,7 +46,7 @@ namespace GLHF
 
             StateObjects.Clear();
 
-            var scenePrefabTable = RetrieveSceneObjects(scene);
+            var scenePrefabTable = RetrieveSceneObjects();
 
             Allocator.Block* current = null;
             
@@ -55,7 +54,7 @@ namespace GLHF
             {
                 if (prefabId >= 0)
                 {
-                    Instantiate(prefabId, ptr, scene);
+                    Instantiate(prefabId, ptr);
                 }
                 else
                 {
@@ -69,7 +68,7 @@ namespace GLHF
             }
         }
 
-        public T Spawn<T>(T prefab, Scene scene) where T : TickBehaviour
+        public T Spawn<T>(T prefab) where T : TickBehaviour
         {
             var spawned = Object.Instantiate(prefab);
             SceneManager.MoveGameObjectToScene(spawned.gameObject, scene);
@@ -96,7 +95,7 @@ namespace GLHF
             return stateObjects;
         }
 
-        private Dictionary<int, StateObject> RetrieveSceneObjects(Scene scene)
+        private Dictionary<int, StateObject> RetrieveSceneObjects()
         {
             var results = new Dictionary<int, StateObject>();
 
@@ -119,7 +118,7 @@ namespace GLHF
             return results;
         }
 
-        private StateObject Instantiate(int id, byte* ptr, Scene scene)
+        private StateObject Instantiate(int id, byte* ptr)
         {
             var prefab = prefabTable[id];
             var spawned = Object.Instantiate(prefab);

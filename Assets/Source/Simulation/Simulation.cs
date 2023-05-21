@@ -70,7 +70,7 @@ namespace GLHF
 
         internal void RebuildGameObjectWorld()
         {
-            gameObjectWorld.BuildFromSnapshot(Snapshot, Scene);
+            gameObjectWorld.BuildFromSnapshot(Snapshot);
 
             foreach (var so in gameObjectWorld.StateObjects)
             {
@@ -133,7 +133,7 @@ namespace GLHF
 
         public T Spawn<T>(T prefab, Vector3 position) where T : TickBehaviour
         {
-            var spawned = gameObjectWorld.Spawn(prefab, Scene);
+            var spawned = gameObjectWorld.Spawn(prefab);
 
             spawned.Object.SetSimulation(this);
 

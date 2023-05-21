@@ -28,7 +28,7 @@ namespace GLHF.Tests
             var snapshot = new Snapshot(allocator);
             var prefabTable = new Dictionary<int, StateObject>() { { stateObjectPrefab.BakedPrefabId, stateObjectPrefab } };
 
-            var world = new GameObjectWorld(snapshot, prefabTable);
+            var world = new GameObjectWorld(snapshot, scene, prefabTable);
 
             world.BuildFromStateObjects(sos);
 
@@ -45,7 +45,7 @@ namespace GLHF.Tests
 
             long initialChecksum = allocator.Checksum();
 
-            world.BuildFromSnapshot(snapshot, scene);
+            world.BuildFromSnapshot(snapshot);
 
             long checksum = allocator.Checksum();
 

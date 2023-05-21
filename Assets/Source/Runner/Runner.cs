@@ -255,7 +255,7 @@ namespace GLHF
 
             OnComplete?.Invoke();
         }
-
+        
         private void StartRunning()
         {
             Running = true;
@@ -263,7 +263,7 @@ namespace GLHF
             var allocator = new Allocator(1024);
             var snapshot = new Snapshot(allocator);
 
-            var gameObjectWorld = new GameObjectWorld(snapshot, config.PrefabTable);
+            var gameObjectWorld = new GameObjectWorld(snapshot, Scene, config.PrefabTable);
 
             Simulation = new Simulation(snapshot, DeltaTime, Scene, gameObjectWorld, localPlayerIndex);
             gameObjectWorld.BuildFromStateObjects(Scene.FindObjectsOfType<StateObject>());
