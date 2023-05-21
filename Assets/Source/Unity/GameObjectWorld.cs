@@ -11,13 +11,19 @@ namespace GLHF
         private readonly Dictionary<int, StateObject> prefabTable;
         private readonly Scene scene;
 
+        private readonly Dictionary<int, StateObject> sceneStateObjects;
+        private readonly GameObject[] sceneGameObjects;
+
         private Snapshot snapshot;
 
         public GameObjectWorld(Snapshot snapshot, Scene scene, Dictionary<int, StateObject> prefabTable)
         {
             this.prefabTable = prefabTable;
             this.scene = scene;
-            this.snapshot = snapshot;         
+            this.snapshot = snapshot;
+
+            sceneStateObjects = RetrieveSceneStateObjects();
+            sceneGameObjects = scene.GetRootGameObjects();
         }
 
         public void BuildFromStateObjects(IEnumerable<StateObject> stateObjects)
@@ -46,8 +52,6 @@ namespace GLHF
 
             StateObjects.Clear();
 
-            var scenePrefabTable = RetrieveSceneObjects();
-
             Allocator.Block* current = null;
             
             while (snapshot.NextStateObject(current, out var next, out byte* ptr, out int prefabId))
@@ -58,7 +62,7 @@ namespace GLHF
                 }
                 else
                 {
-                    var sceneObject = scenePrefabTable[prefabId];
+                    var sceneObject = sceneStateObjects[prefabId];
                     sceneObject.SetPointer(ptr);
 
                     StateObjects.AddLast(sceneObject);
@@ -88,6 +92,33 @@ namespace GLHF
             Destroy(so);
         }
 
+        public T FindComponentOnStateObject<T>() where T : Component
+        {
+            foreach (var so in StateObjects)
+            {
+                var behaviour = so.GetComponentInChildren<T>();
+
+                if (behaviour != null)
+                    return behaviour;
+            }
+
+            return null;
+        }
+
+        public List<T> FindComponentsOnStateObjects<T>() where T : Component
+        {
+            var list = new List<T>();
+
+            foreach (var so in StateObjects)
+            {
+                var behaviours = so.GetComponentsInChildren<T>();
+
+                list.AddRange(behaviours);
+            }
+
+            return list;
+        }
+
         public IEnumerable<StateObject> StateObjectIterator()
         {
             var stateObjects = new List<StateObject>(StateObjects);
@@ -95,7 +126,7 @@ namespace GLHF
             return stateObjects;
         }
 
-        private Dictionary<int, StateObject> RetrieveSceneObjects()
+        private Dictionary<int, StateObject> RetrieveSceneStateObjects()
         {
             var results = new Dictionary<int, StateObject>();
 
@@ -110,7 +141,7 @@ namespace GLHF
                 {
                     if (so.IsSceneObject)
                     {
-                        results.Add(so.PrefabId, so);
+                        results.Add(so.BakedPrefabId, so);
                     }
                 }
             }

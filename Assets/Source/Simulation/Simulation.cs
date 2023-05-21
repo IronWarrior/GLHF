@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -161,6 +162,16 @@ namespace GLHF
                 return currentInputs.StateInputs[playerIndex];
             else
                 return default;
+        }
+
+        public T FindComponentOnStateObject<T>() where T : Component
+        {
+            return gameObjectWorld.FindComponentOnStateObject<T>();
+        }
+
+        public List<T> FindComponentsOnStateObjects<T>() where T : Component
+        {
+            return gameObjectWorld.FindComponentsOnStateObjects<T>();
         }
     }
 }
