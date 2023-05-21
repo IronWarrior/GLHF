@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.18028378, g: 0.22571412, b: 0.30692285, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -154,9 +154,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 041163e14507885418a5f79115eab73c, type: 2}
   runnerPrefab: {fileID: 7147567346443839536, guid: 006616d89fdb25f43a2184928766bd8b, type: 3}
-  clients: 1
+  clients: 2
   port: 7778
-  useLocalTransport: 1
+  useLocalTransport: 0
   useSimulatedLatency: 0
   useDesyncAnalyzer: 1
   minLatencyMilliseconds: 300

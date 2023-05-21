@@ -142,7 +142,7 @@ namespace GLHF
                     // TODO: Make a message class for this.
                     ByteBuffer buffer = new ByteBuffer();
                     buffer.Put((byte)MessageType.Start);
-                    buffer.Put(0);
+                    buffer.Put(1);
                     buffer.Put(PlayerCount);
                     buffer.Put(peerId + 1);
                     buffer.Put(true);
@@ -220,13 +220,15 @@ namespace GLHF
         #region Game and Scene Managment
         public void StartGame()
         {
+            int sceneIndex = 1;
+
             Debug.Assert(Role == RunnerRole.Host, "Clients are not permitted to initiate game start.");
 
             for (int i = 1; i < PlayerCount; i++)
             {
                 ByteBuffer buffer = new ByteBuffer();
                 buffer.Put((byte)MessageType.Start);
-                buffer.Put(0);
+                buffer.Put(sceneIndex);
                 buffer.Put(PlayerCount);
                 buffer.Put(i);
 
@@ -235,7 +237,7 @@ namespace GLHF
 
             playerJoinEvents = PlayerCount;
 
-            LoadSceneAndStartGame(0, null);
+            LoadSceneAndStartGame(sceneIndex, null);
         }
 
         private void LoadSceneAndStartGame(int index, Action OnComplete)
