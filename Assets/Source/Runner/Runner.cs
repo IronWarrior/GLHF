@@ -131,7 +131,7 @@ namespace GLHF
         {
             if (Role == RunnerRole.Host)
             {
-                clientInputBuffers.Add(new ClientInputBuffer(Running ? Simulation.Tick : 0));
+                clientInputBuffers.Add(new ClientInputBuffer());
                 currentInputs.Add(default);
 
                 PlayerCount++;
@@ -169,16 +169,16 @@ namespace GLHF
 
         private void Transport_OnReceive(int id, float rtt, byte[] data)
         {
-            ByteBuffer buffer = new ByteBuffer(data);
+            ByteBuffer buffer = new(data);
             MessageType msgType = (MessageType)buffer.Get<byte>();
 
             if (Role == RunnerRole.Host)
             {
                 Debug.Assert(msgType == MessageType.Input);
 
-                ClientInputMessage message = new ClientInputMessage(buffer);
+                ClientInputMessage message = new(buffer);
 
-                clientInputBuffers[id].Insert(message, Simulation.Tick, DeltaTime - deltaTimeAccumulated, DeltaTime);
+                clientInputBuffers[id].Insert(message, Time.time, DeltaTime - deltaTimeAccumulated, Simulation.Tick, DeltaTime);
             }
             else
             {

@@ -21,7 +21,7 @@ public class InputHandler : MonoBehaviour, IInputHandler
         StateInput input = new();
 
         var moveInput = actions.Default.Move.ReadValue<Vector2>();
-        input.MoveDirection = new Vector3(moveInput.x, 0, moveInput.y);
+        input.MoveDirection = Vector3.ClampMagnitude(new Vector3(moveInput.x, 0, moveInput.y), 1);
         input.Fire = actions.Default.Fire.ReadValue<float>() > 0.5f;
 
         return input;

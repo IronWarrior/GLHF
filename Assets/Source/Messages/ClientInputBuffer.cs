@@ -2,43 +2,39 @@ using System.Collections.Generic;
 
 namespace GLHF
 {
-    // TODO: When updated for prediction, would report receive error, etc.
     public class ClientInputBuffer
     {
         public int Size => queue.Count;
         public float Error { get; private set; }
 
-        //private readonly OrderedMessageBuffer<ClientInputMessage> unconsumed = new OrderedMessageBuffer<ClientInputMessage>();
-        //private readonly MessageBuffer<ClientInputMessage> pending = new MessageBuffer<ClientInputMessage>(1);
+        private readonly Queue<ClientInputMessage> queue = new();
 
-        private readonly Queue<ClientInputMessage> queue = new Queue<ClientInputMessage>();
-
-        private int nextTickToBeConsumed;
-
-        public ClientInputBuffer()
+        public void Insert(ClientInputMessage message, float time, float timeUntilNextTick, int nextTick, float deltaTime)
         {
+            // At what time will the next tick be simulated?
+            float nextTickTime = time + timeUntilNextTick;        
 
-        }
-
-        public ClientInputBuffer(int firstTickToBeConsumed)
-        {
-            nextTickToBeConsumed = firstTickToBeConsumed;
-        }
-
-        public void Insert(ClientInputMessage message, int nextTick, float timeUntilNextTick, float deltaTime)
-        {
-            // Negative if the message has arrived early, positive if it is late.
+            // Positive if the message is late, negative if it is early.
             int tickDelta = nextTick - message.Tick;
 
-            // Also should add in some standard dev as a buffer, based on the regularity of the arrivals.
-            Error = tickDelta * deltaTime;
+            // When would this message's tick be simulated?
+            // I.e., to be perfectly on time, when would it arrive?
+            float targetArrivalTime = nextTickTime - tickDelta * deltaTime;
+
+            // Add buffer to account for network jitter, adjusting so that the target arrival time is slightly earlier than "perfect".
+            // TODO: This buffer should resize based on the client connection's network jitter.
+            float buffer = 0.02f;
+            targetArrivalTime -= buffer;
+
+            // Negative error for early messages, positive for late.
+            Error = time - targetArrivalTime;
+
+            UnityEngine.Debug.Log(Error);
 
             if (tickDelta <= 0)
             {
                 queue.Enqueue(message);
             }
-
-            // unconsumed.Insert(message);
         }
 
         public bool TryPop(out ClientInputMessage message)
@@ -54,23 +50,6 @@ namespace GLHF
                 message = null;
                 return false;
             }
-
-            //while (unconsumed.TryDequeue(nextTickToBeConsumed, out ClientInputMessage unconsumedMessage))
-            //{
-            //    // Not really using the time...yet.
-            //    pending.Insert(unconsumedMessage, 0);
-
-            //    nextTickToBeConsumed++;
-            //}
-
-            //if (pending.TryPop(out message))
-            //{
-            //    return true;
-            //}
-            //else
-            //{
-            //    return false;
-            //}
         }
     }
 }
