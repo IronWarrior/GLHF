@@ -1,8 +1,10 @@
 using GLHF;
 using GLHF.Transport;
 using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class Menu : MonoBehaviour
@@ -36,6 +38,8 @@ public class Menu : MonoBehaviour
 
         runner.Host(port, config, transporter);
         runner.StartGame();
+
+        StartCoroutine(UnloadSceneWhenRunnerLoaded(runner));
     }
 
     private void Client()
@@ -48,5 +52,14 @@ public class Menu : MonoBehaviour
         int port = Convert.ToInt32(hostPortInput.text);
 
         runner.Join(port, addressInput.text, config, transporter);
+
+        StartCoroutine(UnloadSceneWhenRunnerLoaded(runner));
+    }
+
+    private IEnumerator UnloadSceneWhenRunnerLoaded(Runner runner)
+    {
+        yield return new WaitUntil(() => runner.Scene.isLoaded);
+
+        SceneManager.UnloadSceneAsync(SceneManager.GetActiveScene());
     }
 }
