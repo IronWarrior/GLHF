@@ -1,5 +1,4 @@
 using GLHF.Dev;
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -48,8 +47,11 @@ namespace GLHF
             {
                 if (hostSnapshot.Tick == snapshot.Tick)
                 {
+#if UNITY_EDITOR
                     var window = EditorWindow.GetWindow<SnapshotComparer>();
                     window.Initialize(hostSnapshot, snapshot, runner);
+#endif
+
                     return;
                 }
             }

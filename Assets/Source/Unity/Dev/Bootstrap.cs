@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace GLHF
+namespace GLHF.Editor
 {
     public class Bootstrap : MonoBehaviour
     {
@@ -45,7 +45,7 @@ namespace GLHF
                 DontDestroyOnLoad(gameObject);
 
                 if (useDesyncAnalyzer)
-                    desyncAnalyzer = new DesyncAnalyzer();
+                   desyncAnalyzer = new DesyncAnalyzer();
 
                 host = null;
 

@@ -98,7 +98,7 @@ namespace GLHF.Transport
 
             Channel channel = deliveryMethod == DeliveryMethod.ReliableOrdered ? peer.ReliableOrderedChannel : peer.ReliableChannel;
 
-            Packet packet = new Packet()
+            Packet packet = new()
             {
                 SendingPeerID = ID,
                 Data = data,

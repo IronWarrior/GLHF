@@ -56,6 +56,8 @@ namespace GLHF
         private Rollback rollback;
 
         private int localPlayerIndex;
+
+        private float rtt;
         #endregion
 
         private Transporter transporter;
@@ -214,6 +216,8 @@ namespace GLHF
                     ServerInputMessage message = new ServerInputMessage(buffer);
                     unconsumedServerStates.Insert(message);
                 }
+
+                this.rtt = rtt;
             }
         }
 
@@ -439,6 +443,7 @@ namespace GLHF
         public struct Diagnostics
         {
             public int PredictedTickCount;
+            public float RoundTripTime;
         }
 
         public Diagnostics GetDiagnostics()
@@ -448,6 +453,7 @@ namespace GLHF
             if (Role == RunnerRole.Client)
             {
                 diagnostics.PredictedTickCount = clientSimulation.GetPredictedTickCount();
+                diagnostics.RoundTripTime = rtt;
             }
 
             return diagnostics;

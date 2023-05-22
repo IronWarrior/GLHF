@@ -82,7 +82,9 @@ namespace GLHF.Transport
         { 
             byte[] bytes = reader.GetRemainingBytes();
 
-            OnReceive?.Invoke(peer.Id, peer.Ping, bytes);
+            float rtt = peer.Ping / 1000f;
+
+            OnReceive?.Invoke(peer.Id, rtt, bytes);
         }
 
         private LiteNetLib.DeliveryMethod GetDeliveryMethod(DeliveryMethod method)

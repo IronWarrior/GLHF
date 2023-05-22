@@ -74,12 +74,13 @@ namespace GLHF.Transport
             if (simulatingLatency)
             {
                 // Replace with something Unity agnostic.
-                float arrivalTime = Time.time + (float)random.Next(latency.MinDelay, latency.MaxDelay) / 1000;
+                float delay = (float)random.Next(latency.MinDelay, latency.MaxDelay) / 1000;
+                float arrivalTime = Time.time + delay;
 
                 pendingMessages.Add((arrivalTime, new Message
                 {
                     peerId = peerId,
-                    rtt = rtt,
+                    rtt = rtt + delay,
                     data = data
                 }));
             }

@@ -42,6 +42,7 @@ namespace GLHF.Editor
                 {
                     if (runner.Running)
                     {                        
+                        GUILayout.Label($"Ping: {diagnostics.RoundTripTime * 1000:#}ms");
                         GUILayout.Label($"Predicted Ticks: {diagnostics.PredictedTickCount}");
                     }
                     else

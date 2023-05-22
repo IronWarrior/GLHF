@@ -3,6 +3,7 @@ using UnityEditor;
 
 namespace GLHF.Dev
 {
+#if UNITY_EDITOR
     public unsafe class SnapshotComparer : EditorWindow
     {
         private Snapshot truth, target;
@@ -148,4 +149,5 @@ namespace GLHF.Dev
             GUI.contentColor = equal ? defaultStyle.normal.textColor : Color.red;
         }
     }
+#endif
 }
