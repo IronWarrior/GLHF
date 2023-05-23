@@ -8,9 +8,23 @@ namespace GLHF
         public float Error { get; private set; }
 
         private readonly Queue<ClientInputMessage> queue = new();
+        private readonly RollingStandardDeviation standardDeviation;
 
-        public void Insert(ClientInputMessage message, float time, float timeUntilNextTick, int nextTick, float deltaTime)
+        private readonly float deltaTime;
+
+        private float lastMessageReceived;
+
+        public ClientInputBuffer(float deltaTime)
         {
+            this.deltaTime = deltaTime;
+
+            standardDeviation = new RollingStandardDeviation((int)(1 / deltaTime));
+        }
+
+        public void Insert(ClientInputMessage message, float time, float timeUntilNextTick, int nextTick)
+        {
+            standardDeviation.Insert(time - lastMessageReceived);
+
             // At what time will the next tick be simulated?
             float nextTickTime = time + timeUntilNextTick;        
 
@@ -23,7 +37,7 @@ namespace GLHF
 
             // Add buffer to account for network jitter, adjusting so that the target arrival time is slightly earlier than "perfect".
             // TODO: This buffer should resize based on the client connection's network jitter.
-            float buffer = 0.02f;
+            float buffer = deltaTime/* + standardDeviation.CalculateStandardDeviation() * 2*/;
             targetArrivalTime -= buffer;
 
             // Negative error for early messages, positive for late.
@@ -35,6 +49,8 @@ namespace GLHF
             {
                 queue.Enqueue(message);
             }
+
+            lastMessageReceived = time;
         }
 
         public bool TryPop(out ClientInputMessage message)

@@ -131,7 +131,7 @@ namespace GLHF
         {
             if (Role == RunnerRole.Host)
             {
-                clientInputBuffers.Add(new ClientInputBuffer());
+                clientInputBuffers.Add(new ClientInputBuffer(DeltaTime));
                 currentInputs.Add(default);
 
                 PlayerCount++;
@@ -178,7 +178,7 @@ namespace GLHF
 
                 ClientInputMessage message = new(buffer);
 
-                clientInputBuffers[id].Insert(message, Time.time, DeltaTime - deltaTimeAccumulated, Simulation.Tick, DeltaTime);
+                clientInputBuffers[id].Insert(message, Time.time, DeltaTime - deltaTimeAccumulated, Simulation.Tick);
             }
             else
             {
