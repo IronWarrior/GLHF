@@ -4,7 +4,8 @@
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "GLHF"
+        "GLHF",
+        "Unity.Mathematics"
     ],
     "includePlatforms": [
         "Editor"

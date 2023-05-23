@@ -3,6 +3,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using UnityEditor;
+using Unity.Mathematics;
 
 namespace GLHF.Tests
 {
@@ -32,11 +33,11 @@ namespace GLHF.Tests
 
             world.BuildFromStateObjects(sos);
 
-            var positions = new List<Vector3>();
-
+            var positions = new List<float3>();
+            
             foreach (var so in sos)
             {
-                Vector3 position = Random.insideUnitSphere;
+                float3 position = UnityEngine.Random.insideUnitSphere;
 
                 so.GetComponent<StateTransform>().Position = position;
 
@@ -56,7 +57,7 @@ namespace GLHF.Tests
 
             foreach (var so in world.StateObjects)
             {
-                Assert.That(so.GetComponent<StateTransform>().Position == positions[count]);
+                Assert.That(so.GetComponent<StateTransform>().Position.Equals(positions[count]));
 
                 count++;
             }

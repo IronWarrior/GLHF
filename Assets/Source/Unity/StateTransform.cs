@@ -1,20 +1,20 @@
-using UnityEngine;
+using Unity.Mathematics;
 
 namespace GLHF
 {
     public unsafe class StateTransform : StateBehaviour
     {
-        public Vector3 Position
+        public float3 Position
         {
-            get => *(Vector3*)Ptr;
+            get => *(float3*)Ptr;
 
             set
             {
-                *(Vector3*)Ptr = value;
+                *(float3*)Ptr = value;
             }
         }
 
-        public override int Size => sizeof(Vector3);
+        public override int Size => sizeof(float3);
 
         public override void Render()
         {

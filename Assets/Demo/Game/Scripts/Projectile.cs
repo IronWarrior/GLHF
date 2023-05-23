@@ -1,5 +1,6 @@
 using GLHF;
 using UnityEngine;
+using Unity.Mathematics;
 
 public unsafe class Projectile : StateBehaviour
 {
@@ -9,19 +10,19 @@ public unsafe class Projectile : StateBehaviour
     [SerializeField]
     float lifetime = 5;
 
-    public Vector3 Direction
+    public float3 Direction
     {
-        get => *(Vector3*)(Ptr);
-        set => *(Vector3*)(Ptr) = value;
+        get => *(float3*)(Ptr);
+        set => *(float3*)(Ptr) = value;
     }
 
     public float LifetimeStart
     {
-        get => *(float*)(Ptr + sizeof(Vector3));
-        set => *(float*)(Ptr + sizeof(Vector3)) = value;
+        get => *(float*)(Ptr + sizeof(float3));
+        set => *(float*)(Ptr + sizeof(float3)) = value;
     }
 
-    public override int Size => sizeof(Vector3) + sizeof(float);
+    public override int Size => sizeof(float3) + sizeof(float);
 
     public override void TickStart()
     {

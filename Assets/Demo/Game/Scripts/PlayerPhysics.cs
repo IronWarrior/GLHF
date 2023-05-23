@@ -1,5 +1,6 @@
 using UnityEngine;
 using GLHF;
+using Unity.Mathematics;
 
 public unsafe class PlayerPhysics : StateBehaviour
 {
@@ -20,7 +21,7 @@ public unsafe class PlayerPhysics : StateBehaviour
 
         var t = GetComponent<StateTransform>();
 
-        t.Position += speed * input.MoveDirection * Simulation.DeltaTime;
+        t.Position += speed * (float3)input.MoveDirection * Simulation.DeltaTime;
     }
 
     public void SetPlayerIndex(int index)
