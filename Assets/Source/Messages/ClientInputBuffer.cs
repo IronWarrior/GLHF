@@ -43,8 +43,6 @@ namespace GLHF
             // Negative error for early messages, positive for late.
             Error = time - targetArrivalTime;
 
-            UnityEngine.Debug.Log(Error);
-
             if (tickDelta <= 0)
             {
                 queue.Enqueue(message);
