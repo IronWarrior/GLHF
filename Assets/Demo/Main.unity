@@ -156,7 +156,7 @@ MonoBehaviour:
   runnerPrefab: {fileID: 7147567346443839536, guid: 006616d89fdb25f43a2184928766bd8b, type: 3}
   clients: 2
   port: 7778
-  useLocalTransport: 0
+  useLocalTransport: 1
   useSimulatedLatency: 0
   useDesyncAnalyzer: 1
   minLatencyMilliseconds: 40

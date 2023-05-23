@@ -91,7 +91,9 @@ namespace GLHF.Editor
                         yield return null;
                     }
 
-                    host.StartGame();
+                    int sceneIndex = SceneManager.GetActiveScene().buildIndex;
+
+                    host.StartGame(sceneIndex);
 
                     StartCoroutine(UnloadBootstrapSceneWhenRunnerLoaded(host));
                 }

@@ -37,7 +37,7 @@ public class Menu : MonoBehaviour
         int port = Convert.ToInt32(hostPortInput.text);
 
         runner.Host(port, config, transporter);
-        runner.StartGame();
+        runner.StartGame(1);
 
         StartCoroutine(UnloadSceneWhenRunnerLoaded(runner));
     }

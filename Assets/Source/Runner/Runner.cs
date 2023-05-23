@@ -144,7 +144,7 @@ namespace GLHF
                     // TODO: Make a message class for this.
                     ByteBuffer buffer = new ByteBuffer();
                     buffer.Put((byte)MessageType.Start);
-                    buffer.Put(1);
+                    buffer.Put(Scene.buildIndex);
                     buffer.Put(PlayerCount);
                     buffer.Put(peerId + 1);
                     buffer.Put(true);
@@ -222,10 +222,8 @@ namespace GLHF
         }
 
         #region Game and Scene Managment
-        public void StartGame()
+        public void StartGame(int sceneIndex)
         {
-            int sceneIndex = 1;
-
             Debug.Assert(Role == RunnerRole.Host, "Clients are not permitted to initiate game start.");
 
             for (int i = 1; i < PlayerCount; i++)
